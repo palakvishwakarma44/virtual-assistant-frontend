@@ -1,0 +1,2128 @@
+// import React, { useContext, useEffect, useRef, useState } from 'react'
+// import { userDataContext } from '../context/userContext'
+// import { useNavigate } from 'react-router-dom'
+// import axios from 'axios'
+// import aiImg from "../assets/ai.gif"
+// import { CgMenuRight } from "react-icons/cg";
+// import { RxCross1 } from "react-icons/rx";
+// import userImg from "../assets/user.gif"
+// function Home() {
+//   //const [, setActivated] = useState(false);
+
+//   const {userData,serverUrl,setUserData,getGeminiResponse}=useContext(userDataContext)
+//   const navigate=useNavigate()
+//   const [listening,setListening]=useState(false)
+//   const [userText,setUserText]=useState("")
+//   const [aiText,setAiText]=useState("")
+//   const isSpeakingRef=useRef(false)
+//   const recognitionRef=useRef(null)
+
+
+//   const [ham,setHam]=useState(false)
+//     const [typedMessage, setTypedMessage] = useState("");
+//   const isRecognizingRef=useRef(false)
+//   const synth=window.speechSynthesis
+
+//   const handleLogOut=async ()=>{
+//     try {
+//       const result=await axios.get(`${serverUrl}/api/auth/logout`,{withCredentials:true})
+//       setUserData(null)
+//       navigate("/signin")
+//     } catch (error) {
+//       setUserData(null)
+//       console.log(error)
+//     }
+//   }
+
+//   const startRecognition = () => {
+
+//    if (!isSpeakingRef.current && !isRecognizingRef.current) {
+//     try {
+//       recognitionRef.current?.start();
+//       console.log("Recognition requested to start");
+//     } catch (error) {
+//       if (error.name !== "InvalidStateError") {
+//         console.error("Start error:", error);
+//       }
+//     }
+//   }
+
+//   }
+
+//   const speak=(text)=>{
+//     const utterence=new SpeechSynthesisUtterance(text)
+//     utterence.lang = 'hi-IN';
+//     const voices =window.speechSynthesis.getVoices()
+//     const hindiVoice = voices.find(v => v.lang === 'hi-IN');
+//     if (hindiVoice) {
+//       utterence.voice = hindiVoice;
+//     }
+
+
+//     isSpeakingRef.current=true
+//     utterence.onend=()=>{
+//         setAiText("");
+//   isSpeakingRef.current = false;
+//   setTimeout(() => {
+//     startRecognition(); // ⏳ Delay se race condition avoid hoti hai
+//   }, 800);
+//     }
+//    synth.cancel(); // 🛑 pehle se koi speech ho to band karo
+// synth.speak(utterence);
+//   }
+
+//   const handleCommand=(data)=>{
+//     const {type,userInput,response}=data
+//       speak(response);
+
+//     if (type === 'google-search') {
+//       const query = encodeURIComponent(userInput);
+//       window.open(`https://www.google.com/search?q=${query}`, '_blank');
+//     }
+//      if (type === 'calculator-open') {
+
+//       window.open(`https://www.google.com/search?q=calculator`, '_blank');
+//     }
+//      if (type === "instagram-open") {
+//       window.open(`https://www.instagram.com/`, '_blank');
+//     }
+//     if (type ==="facebook-open") {
+//       window.open(`https://www.facebook.com/`, '_blank');
+//     }
+//      if (type ==="weather-show") {
+//       window.open(`https://www.google.com/search?q=weather`, '_blank');
+//     }
+
+//     if (type === 'youtube-search' || type === 'youtube-play') {
+//       const query = encodeURIComponent(userInput);
+//       window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank');
+//     }
+
+//     const handleTypedSend = async () => {
+//   if (!typedMessage.trim()) return;
+
+//   recognitionRef.current?.stop();
+//   isRecognizingRef.current = false;
+
+//   setUserText(typedMessage);
+
+//   const data = await getGeminiResponse(typedMessage);
+
+//   handleCommand(data);
+//   speak(data.response);
+
+//   setTypedMessage("");
+// };
+
+//   }
+
+// useEffect(() => {
+//   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+//   const recognition = new SpeechRecognition();
+
+//   recognition.continuous = true;
+//   recognition.lang = 'en-US';
+//   recognition.interimResults = false;
+
+//   recognitionRef.current = recognition;
+
+//   let isMounted = true;  // flag to avoid setState on unmounted component
+
+//   // Start recognition after 1 second delay only if component still mounted
+//   const startTimeout = setTimeout(() => {
+//     if (isMounted && !isSpeakingRef.current && !isRecognizingRef.current) {
+//       try {
+//         recognition.start();
+//         console.log("Recognition requested to start");
+//       } catch (e) {
+//         if (e.name !== "InvalidStateError") {
+//           console.error(e);
+//         }
+//       }
+//     }
+//   }, 1000);
+
+//   recognition.onstart = () => {
+//     isRecognizingRef.current = true;
+//     setListening(true);
+//   };
+
+//   recognition.onend = () => {
+//     isRecognizingRef.current = false;
+//     setListening(false);
+//     if (isMounted && !isSpeakingRef.current) {
+//       setTimeout(() => {
+//         if (isMounted) {
+//           try {
+//             recognition.start();
+//             console.log("Recognition restarted");
+//           } catch (e) {
+//             if (e.name !== "InvalidStateError") console.error(e);
+//           }
+//         }
+//       }, 1000);
+//     }
+//   };
+
+//   recognition.onerror = (event) => {
+//     console.warn("Recognition error:", event.error);
+//     isRecognizingRef.current = false;
+//     setListening(false);
+//     if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
+//       setTimeout(() => {
+//         if (isMounted) {
+//           try {
+//             recognition.start();
+//             console.log("Recognition restarted after error");
+//           } catch (e) {
+//             if (e.name !== "InvalidStateError") console.error(e);
+//           }
+//         }
+//       }, 1000);
+//     }
+//   };
+
+//   recognition.onresult = async (e) => {
+//     const transcript = e.results[e.results.length - 1][0].transcript.trim();
+//     if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
+//       setAiText("");
+//       setUserText(transcript);
+//       recognition.stop();
+//       isRecognizingRef.current = false;
+//       setListening(false);
+//       const data = await getGeminiResponse(transcript);
+//       console.log("Gemini response data:", data); 
+//       handleCommand(data);
+//       setAiText(data.response);
+//       speak(data.response); 
+//       setUserText("");
+//     }
+//   };
+
+
+//     const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
+//     greeting.lang = 'hi-IN';
+
+//     window.speechSynthesis.speak(greeting);
+
+
+//   return () => {
+//     isMounted = false;
+//     clearTimeout(startTimeout);
+//     recognition.stop();
+//     setListening(false);
+//     isRecognizingRef.current = false;
+//   };
+// }, []);
+
+
+
+
+//   return (
+//     <div className='w-full h-[100vh] bg-gradient-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-[15px]'>
+//       <CgMenuRight className='lg:hidden text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(true)}/>
+//       <div className={`absolute lg:hidden top-0 w-full h-full bg-[#00000053] backdrop-blur-lg p-[20px] flex flex-col gap-[20px] items-start ${ham?"translate-x-0":"translate-x-full"} transition-transform`}>
+//  <RxCross1 className=' text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(false)}/>
+//  <button className='min-w-[150px] h-[60px]  text-black font-semibold   bg-white rounded-full cursor-pointer text-[19px] ' onClick={handleLogOut}>Log Out</button>
+//       <button className='min-w-[150px] h-[60px]  text-black font-semibold  bg-white  rounded-full cursor-pointer text-[19px] px-[20px] py-[10px] ' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+
+// <div className='w-full h-[2px] bg-gray-400'></div>
+// <h1 className='text-white font-semibold text-[19px]'>History</h1>
+
+// <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
+//   {userData.history?.map((his)=>(
+//     <div className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
+//   ))}
+
+// </div>
+
+//       </div>
+//       <button className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold absolute hidden lg:block top-[20px] right-[20px]  bg-white rounded-full cursor-pointer text-[19px] ' onClick={handleLogOut}>Log Out</button>
+//       <button className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold  bg-white absolute top-[100px] right-[20px] rounded-full cursor-pointer text-[19px] px-[20px] py-[10px] hidden lg:block ' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+//       <div className='w-[300px] h-[400px] flex justify-center items-center overflow-hidden rounded-4xl shadow-lg'>
+// <img src={userData?.assistantImage} alt="" className='h-full object-cover'/>
+//       </div>
+//       <h1 className='text-white text-[18px] font-semibold'>I'm {userData?.assistantName}</h1>
+//       {!aiText && <img src={userImg} alt="" className='w-[200px]'/>}
+//       {aiText && <img src={aiImg} alt="" className='w-[200px]'/>}
+
+//     <h1 className='text-white text-[18px] font-semibold text-wrap'>{userText?userText:aiText?aiText:null}</h1>
+
+//     </div>
+//   )
+// }
+
+// export default Home
+// import React, { useContext, useEffect, useRef, useState } from 'react';
+// import { userDataContext } from '../context/userContext';
+// import { useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import aiImg from "../assets/ai.gif";
+// import { CgMenuRight } from "react-icons/cg";
+// import { RxCross1 } from "react-icons/rx";
+// import userImg from "../assets/user.gif";
+
+// function Home() {
+//   const { userData, serverUrl, setUserData, getGeminiResponse } = useContext(userDataContext);
+//   const navigate = useNavigate();
+
+//   const [listening, setListening] = useState(false);
+//   const [userText, setUserText] = useState("");
+//   const [aiText, setAiText] = useState("");
+//   const [ham, setHam] = useState(false);
+
+//   const isSpeakingRef = useRef(false);
+//   const recognitionRef = useRef(null);
+//   const isRecognizingRef = useRef(false);
+
+//   const synth = window.speechSynthesis;
+
+//   // ------------------ Logout ------------------
+//   const handleLogOut = async () => {
+//     try {
+//       await axios.get(`${serverUrl}/api/auth/logout`, { withCredentials: true });
+//       setUserData(null);
+//       navigate("/signin");
+//     } catch (error) {
+//       setUserData(null);
+//       console.error(error);
+//     }
+//   };
+
+//   // ------------------ Speech Synthesis ------------------
+//   const speak = (text) => {
+//     if (!text) return;
+//     const utterance = new SpeechSynthesisUtterance(text);
+//     utterance.lang = 'hi-IN';
+//     const voices = window.speechSynthesis.getVoices();
+//     const hindiVoice = voices.find(v => v.lang === 'hi-IN');
+//     if (hindiVoice) utterance.voice = hindiVoice;
+
+//     isSpeakingRef.current = true;
+
+//     utterance.onend = () => {
+//       setAiText("");
+//       isSpeakingRef.current = false;
+//       setTimeout(() => {
+//         startRecognition();
+//       }, 800);
+//     };
+
+//     synth.cancel();
+//     synth.speak(utterance);
+//   };
+
+//   // ------------------ Commands ------------------
+//   const handleCommand = (data) => {
+//     const { type, userInput, response } = data;
+
+//     speak(response);
+
+//     const openLink = (url) => window.open(url, '_blank');
+
+//     switch (type) {
+//       case 'google-search':
+//         openLink(`https://www.google.com/search?q=${encodeURIComponent(userInput)}`);
+//         break;
+//       case 'calculator-open':
+//         openLink(`https://www.google.com/search?q=calculator`);
+//         break;
+//       case 'instagram-open':
+//         openLink(`https://www.instagram.com/`);
+//         break;
+//       case 'facebook-open':
+//         openLink(`https://www.facebook.com/`);
+//         break;
+//       case 'weather-show':
+//         openLink(`https://www.google.com/search?q=weather`);
+//         break;
+//       case 'youtube-search':
+//       case 'youtube-play':
+//         openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(userInput)}`);
+//         break;
+//       default:
+//         break;
+//     }
+//   };
+
+//   // ------------------ Speech Recognition ------------------
+//   const startRecognition = () => {
+//     if (recognitionRef.current && !isSpeakingRef.current && !isRecognizingRef.current) {
+//       try {
+//         recognitionRef.current.start();
+//         console.log("Recognition requested to start");
+//       } catch (error) {
+//         if (error.name !== "InvalidStateError") console.error(error);
+//       }
+//     }
+//   };
+
+//   useEffect(() => {
+//     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+//     if (!SpeechRecognition) {
+//       console.error("Browser does not support Speech Recognition");
+//       return;
+//     }
+
+//     const recognition = new SpeechRecognition();
+//     recognition.continuous = true;
+//     recognition.interimResults = false;
+//     recognition.lang = 'en-US';
+
+//     recognitionRef.current = recognition;
+//     let isMounted = true;
+
+//     recognition.onstart = () => {
+//       isRecognizingRef.current = true;
+//       setListening(true);
+//     };
+
+//     recognition.onend = () => {
+//       isRecognizingRef.current = false;
+//       setListening(false);
+//       if (isMounted && !isSpeakingRef.current) {
+//         setTimeout(() => startRecognition(), 1000);
+//       }
+//     };
+
+//     recognition.onerror = (event) => {
+//       console.warn("Recognition error:", event.error);
+//       isRecognizingRef.current = false;
+//       setListening(false);
+//       if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
+//         if (event.error === "network") {
+//           console.warn("Network error, recognition stopped.");
+//           recognition.stop();
+//         } else {
+//           setTimeout(() => startRecognition(), 1000);
+//         }
+//       }
+//     };
+
+//     recognition.onresult = async (event) => {
+//       const transcript = event.results[event.results.length - 1][0].transcript.trim();
+//       if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
+//         setAiText("");
+//         setUserText(transcript);
+//         recognition.stop();
+//         isRecognizingRef.current = false;
+//         setListening(false);
+
+//         const data = await getGeminiResponse(transcript);
+//         console.log("Gemini response:", data);
+
+//         handleCommand(data);
+//         setAiText(data.response);
+//         speak(data.response);
+//         setUserText("");
+//       }
+//     };
+
+//     // Greeting
+//     const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
+//     greeting.lang = 'hi-IN';
+//     synth.speak(greeting);
+
+//     // Start recognition initially
+//     setTimeout(() => startRecognition(), 1000);
+
+//     return () => {
+//       isMounted = false;
+//       recognition.stop();
+//       setListening(false);
+//       isRecognizingRef.current = false;
+//     };
+//   }, []);
+
+//   // ------------------ Render ------------------
+//   return (
+//     <div className='w-full h-[100vh] bg-gradient-to-t from-black to-[#02023d] flex justify-center items-center flex-col gap-[15px]'>
+//       <CgMenuRight className='lg:hidden text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(true)}/>
+//       <div className={`absolute lg:hidden top-0 w-full h-full bg-[#00000053] backdrop-blur-lg p-[20px] flex flex-col gap-[20px] items-start ${ham?"translate-x-0":"translate-x-full"} transition-transform`}>
+//         <RxCross1 className=' text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(false)}/>
+//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px]' onClick={handleLogOut}>Log Out</button>
+//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px] px-[20px] py-[10px]' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+
+//         <div className='w-full h-[2px] bg-gray-400'></div>
+//         <h1 className='text-white font-semibold text-[19px]'>History</h1>
+//         <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
+//           {userData.history?.map((his, i) => (
+//             <div key={i} className='text-gray-200 text-[18px] w-full h-[30px]'>{his}</div>
+//           ))}
+//         </div>
+//       </div>
+
+//       <button className='min-w-[150px] h-[60px] text-black font-semibold absolute hidden lg:block top-[20px] right-[20px] bg-white rounded-full cursor-pointer text-[19px]' onClick={handleLogOut}>Log Out</button>
+//       <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white absolute top-[100px] right-[20px] rounded-full cursor-pointer text-[19px] px-[20px] py-[10px] hidden lg:block' onClick={()=>navigate("/customize")}>Customize your Assistant</button>
+
+//       <div className='w-[300px] h-[400px] flex justify-center items-center overflow-hidden rounded-4xl shadow-lg'>
+//         <img src={userData?.assistantImage} alt="" className='h-full object-cover'/>
+//       </div>
+
+//       <h1 className='text-white text-[18px] font-semibold'>I'm {userData?.assistantName}</h1>
+//       {!aiText && <img src={userImg} alt="" className='w-[200px]'/>}
+//       {aiText && <img src={aiImg} alt="" className='w-[200px]'/>}
+
+//       <h1 className='text-white text-[18px] font-semibold text-wrap'>
+//         {userText || aiText || null}
+//       </h1>
+//     </div>
+//   );
+// }
+
+// export default Home;
+// import React, { useContext, useEffect, useRef, useState } from 'react'
+// import { userDataContext } from '../context/userContext'
+// import { useNavigate } from 'react-router-dom'
+// import axios from 'axios'
+// import aiImg from "../assets/ai.gif"
+// import { CgMenuRight } from "react-icons/cg";
+// import { RxCross1 } from "react-icons/rx";
+// import userImg from "../assets/user.gif"
+
+// function Home() {
+
+//   const { userData, serverUrl, setUserData, getGeminiResponse } = useContext(userDataContext)
+//   const navigate = useNavigate()
+
+//   const [listening, setListening] = useState(false)
+//   const [userText, setUserText] = useState("")
+//   const [aiText, setAiText] = useState("")
+//   const [ham, setHam] = useState(false)
+
+//   const [typedMessage, setTypedMessage] = useState("");   //  ⬅ NEW STATE
+
+//   const isSpeakingRef = useRef(false)
+//   const recognitionRef = useRef(null)
+//   const isRecognizingRef = useRef(false)
+//   const synth = window.speechSynthesis
+
+
+//   // ---------------------------------------------
+//   // LOGOUT
+//   // ---------------------------------------------
+//   const handleLogOut = async () => {
+//     try {
+//       const result = await axios.get(`${serverUrl}/api/auth/logout`, { withCredentials: true })
+//       setUserData(null)
+//       navigate("/signin")
+//     } catch (error) {
+//       setUserData(null)
+//       console.log(error)
+//     }
+//   }
+
+
+//   // ---------------------------------------------
+//   // START SPEECH RECOGNITION
+//   // ---------------------------------------------
+//   const startRecognition = () => {
+//     if (!isSpeakingRef.current && !isRecognizingRef.current) {
+//       try {
+//         recognitionRef.current?.start();
+//         console.log("Recognition requested to start");
+//       } catch (error) {
+//         if (error.name !== "InvalidStateError") {
+//           console.error("Start error:", error);
+//         }
+//       }
+//     }
+//   }
+
+
+//   // ---------------------------------------------
+//   // AI SPEAK
+//   // ---------------------------------------------
+//   const speak = (text) => {
+//     const utterence = new SpeechSynthesisUtterance(text)
+//     utterence.lang = 'hi-IN';
+
+//     const voices = window.speechSynthesis.getVoices()
+//     const hindiVoice = voices.find(v => v.lang === 'hi-IN');
+//     if (hindiVoice) utterence.voice = hindiVoice;
+
+//     isSpeakingRef.current = true
+
+//     utterence.onend = () => {
+//       setAiText("");
+//       isSpeakingRef.current = false;
+
+//       setTimeout(() => {
+//         startRecognition();
+//       }, 800);
+//     }
+
+//     synth.cancel();
+//     synth.speak(utterence);
+//   }
+
+
+//   // ---------------------------------------------
+//   // COMMAND HANDLER
+//   // ---------------------------------------------
+//   const handleCommand = (data) => {
+//     const { type, userInput, response } = data
+
+//     speak(response);
+
+//     if (type === 'google-search') {
+//       window.open(`https://www.google.com/search?q=${encodeURIComponent(userInput)}`, '_blank');
+//     }
+
+//     if (type === 'calculator-open') {
+//       window.open(`https://www.google.com/search?q=calculator`, '_blank');
+//     }
+
+//     if (type === 'instagram-open') {
+//       window.open(`https://www.instagram.com/`, '_blank');
+//     }
+
+//     if (type === 'facebook-open') {
+//       window.open(`https://www.facebook.com/`, '_blank');
+//     }
+
+//     if (type === "weather-show") {
+//       window.open(`https://www.google.com/search?q=weather`, '_blank');
+//     }
+
+//     if (type === 'youtube-search' || type === 'youtube-play') {
+//       window.open(
+//         `https://www.youtube.com/results?search_query=${encodeURIComponent(userInput)}`,
+//         '_blank'
+//       );
+//     }
+//   };
+
+
+//   // ---------------------------------------------
+//   // 📌 HANDLE TYPED MESSAGE (NEW)
+//   // ---------------------------------------------
+//   const handleTypedSend = async () => {
+//     if (!typedMessage.trim()) return;
+
+//     recognitionRef.current?.stop();
+//     isRecognizingRef.current = false;
+
+//     setUserText(typedMessage);
+
+//     const data = await getGeminiResponse(typedMessage);
+
+//     handleCommand(data);
+//     speak(data.response);
+
+//     setTypedMessage("");
+//   };
+
+
+//   // ---------------------------------------------
+//   // USE EFFECT - SPEECH RECOGNITION ENGINE
+//   // ---------------------------------------------
+//   useEffect(() => {
+//     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+//     const recognition = new SpeechRecognition();
+
+//     recognition.continuous = true;
+//     recognition.lang = 'en-US';
+//     recognition.interimResults = false;
+
+//     recognitionRef.current = recognition;
+
+//     let isMounted = true;
+
+
+//     const startTimeout = setTimeout(() => {
+//       if (isMounted && !isSpeakingRef.current && !isRecognizingRef.current) {
+//         try {
+//           recognition.start();
+//           console.log("Recognition requested to start");
+//         } catch (e) {
+//           if (e.name !== "InvalidStateError") console.error(e);
+//         }
+//       }
+//     }, 1000);
+
+
+//     recognition.onstart = () => {
+//       isRecognizingRef.current = true;
+//       setListening(true);
+//     };
+
+//     recognition.onend = () => {
+//       isRecognizingRef.current = false;
+//       setListening(false);
+
+//       if (isMounted && !isSpeakingRef.current) {
+//         setTimeout(() => {
+//           try {
+//             recognition.start();
+//             console.log("Recognition restarted");
+//           } catch (e) {
+//             if (e.name !== "InvalidStateError") console.error(e);
+//           }
+//         }, 1000);
+//       }
+//     };
+
+
+//     recognition.onerror = (event) => {
+//       console.warn("Recognition error:", event.error);
+
+//       isRecognizingRef.current = false;
+//       setListening(false);
+
+//       if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
+//         setTimeout(() => {
+//           try {
+//             recognition.start();
+//             console.log("Recognition restarted after error");
+//           } catch (e) {
+//             if (e.name !== "InvalidStateError") console.error(e);
+//           }
+//         }, 1000);
+//       }
+//     };
+
+
+//     recognition.onresult = async (e) => {
+//       const transcript = e.results[e.results.length - 1][0].transcript.trim();
+
+//       if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
+//         setAiText("");
+//         setUserText(transcript);
+
+//         recognition.stop();
+//         isRecognizingRef.current = false;
+//         setListening(false);
+
+//         const data = await getGeminiResponse(transcript);
+//         console.log("Gemini response data:", data);
+
+//         handleCommand(data);
+//         setAiText(data.response);
+
+//         speak(data.response);
+
+//         setUserText("");
+//       }
+//     };
+
+
+//     // First greeting
+//     const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
+//     greeting.lang = 'hi-IN';
+//     window.speechSynthesis.speak(greeting);
+
+
+//     return () => {
+//       isMounted = false;
+//       clearTimeout(startTimeout);
+//       recognition.stop();
+//       setListening(false);
+//       isRecognizingRef.current = false;
+//     };
+//   }, []);
+
+
+
+//   // ---------------------------------------------
+//   // RENDER UI
+//   // ---------------------------------------------
+//   return (
+//     <div className='w-full h-[100vh] bg-gradient-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-[15px]'>
+
+//       {/* Mobile menu */}
+//       <CgMenuRight className='lg:hidden text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={() => setHam(true)} />
+
+//       <div className={`absolute lg:hidden top-0 w-full h-full bg-black/60 backdrop-blur-xl border-r border-white/10 p-[20px] flex flex-col gap-[20px] items-start ${ham ? "translate-x-0" : "translate-x-full"} transition-transform duration-300 z-50`}>
+//         <RxCross1 className='text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={() => setHam(false)} />
+
+//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={handleLogOut}>Log Out</button>
+
+//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={() => navigate("/customize")}>Customize your Assistant</button>
+
+//         <div className='w-full h-[2px] bg-gray-400'></div>
+//         <h1 className='text-white font-semibold text-[19px]'>History</h1>
+
+//         <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
+//           {userData.history?.map((his, i) => (
+//             <div key={i} className='text-gray-200 text-[18px] w-full h-[30px]'>{his}</div>
+//           ))}
+//         </div>
+//       </div>
+
+
+//       {/* Desktop Buttons */}
+//       <button className='hidden lg:block min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full absolute top-[20px] right-[20px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={handleLogOut}>Log Out</button>
+
+//       <button className='hidden lg:block min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full absolute top-[100px] right-[20px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={() => navigate("/customize")}>Customize your Assistant</button>
+
+
+//       {/* AI Image */}
+//       <div className='w-[300px] h-[400px] flex justify-center items-center overflow-hidden rounded-[3rem] shadow-2xl shadow-blue-500/20 border border-white/10'>
+//         <img src={userData?.assistantImage} alt="" className='h-full object-cover' />
+//       </div>
+
+//       <h1 className='text-white text-[18px] font-semibold'>I'm {userData?.assistantName}</h1>
+
+//       {/* USER TYPING + AI SPEAKING IMAGE */}
+//       {!aiText && <img src={userImg} alt="" className='w-[200px]' />}
+//       {aiText && <img src={aiImg} alt="" className='w-[200px]' />}
+
+
+//       {/* LIVE TEXT */}
+//       <h1 className='text-white text-[18px] font-semibold'>{userText ? userText : aiText ? aiText : null}</h1>
+
+
+//       {/* ------------------ NEW TYPE BOX ------------------ */}
+//       <div className='flex items-center gap-3 w-[320px] mt-2'>
+//         <input
+//           type="text"
+//           value={typedMessage}
+//           onChange={(e) => setTypedMessage(e.target.value)}
+//           placeholder="Type your message..."
+//           className='w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white outline-none'
+//         />
+
+//         <button
+//           onClick={handleTypedSend}
+//           className='px-4 py-2 bg-blue-600 rounded-xl text-white font-semibold'
+//         >
+//           Send
+//         </button>
+//       </div>
+
+//     </div>
+//   )
+// }
+
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import { userDataContext } from '../context/userContext'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import aiImg from "../assets/ai.gif"
+import { CgMenuRight } from "react-icons/cg";
+import { RxCross1 } from "react-icons/rx";
+import { FiMic, FiPaperclip, FiImage } from "react-icons/fi";
+import userImg from "../assets/user.gif"
+
+function Home() {
+
+  
+  const { userData, serverUrl, setUserData, getGeminiResponse } = useContext(userDataContext)
+  const navigate = useNavigate()
+
+  const [listening, setListening] = useState(false)
+  const [userText, setUserText] = useState("")
+  const [aiText, setAiText] = useState("")
+  const [ham, setHam] = useState(false)
+
+  // NEW: typed input state
+  const [typedMessage, setTypedMessage] = useState("");
+
+  // ADVANCED ML FEATURES STATES
+  const [generatedImgUrl, setGeneratedImgUrl] = useState(null);
+  const [summaryText, setSummaryText] = useState("");
+  const [showExpenses, setShowExpenses] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [moods, setMoods] = useState([]);
+  const [showMoods, setShowMoods] = useState(false);
+
+  // Load persistence on mount
+  useEffect(() => {
+    const savedExp = JSON.parse(localStorage.getItem("virtual_assistant_expenses") || "[]");
+    setExpenses(savedExp);
+    const savedMoods = JSON.parse(localStorage.getItem("virtual_assistant_moods") || "[]");
+    setMoods(savedMoods);
+  }, []);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [showHistory, setShowHistory] = useState(false); // Toggle for desktop history panel
+
+  // ── TODO LIST STATE ──
+  const [todos, setTodos] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("virtual_assistant_todos")) || [];
+    } catch {
+      return [];
+    }
+  });
+  const [showTodos, setShowTodos] = useState(false);
+
+
+  const chatContainerRef = useRef(null);
+  
+  // Auto-scroll logic removed to allow natural full-page scrolling behavior if desired, 
+  // or it can be updated to scroll the main container.
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      // Instead of scrolling the container, we let the page handle it
+      // but we might want to scroll the main wrapper to the bottom
+      const mainWrapper = chatContainerRef.current.closest('.overflowY-auto') || document.querySelector('.custom-scrollbar');
+      if (mainWrapper) {
+        mainWrapper.scrollTo({
+          top: mainWrapper.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [userText, aiText]);
+  const isRecognizingRef = useRef(false);
+  const isSpeakingRef = useRef(false);
+  const conversationActiveRef = useRef(false);
+  const activeTimerRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const synth = window.speechSynthesis;
+  const canvasRef = useRef(null);
+
+
+  // ---------------------------------------------
+  // LOGOUT
+  // ---------------------------------------------
+  const handleLogOut = async () => {
+    try {
+      const result = await axios.get(`${serverUrl}/api/auth/logout`, { withCredentials: true })
+      setUserData(null)
+      navigate("/signin")
+    } catch (error) {
+      setUserData(null)
+      console.log(error)
+    }
+  }
+
+  const handleDeleteHistory = async () => {
+    try {
+      const res = await axios.delete(`${serverUrl}/api/user/history`, { withCredentials: true })
+      if (res.data?.success) {
+        setUserData(prev => ({ ...prev, history: [] }))
+      }
+    } catch (error) {
+      console.error("Delete history failed:", error)
+      alert("Failed to clear history. Please try again.")
+    }
+  }
+
+
+  // ---------------------------------------------
+  // START SPEECH RECOGNITION
+  // ---------------------------------------------
+  const startRecognition = () => {
+    if (!isSpeakingRef.current) {
+      try {
+        window.speechSynthesis.cancel(); 
+        // Force stop if it were previously stuck
+        if (isRecognizingRef.current) {
+           recognitionRef.current?.stop();
+        }
+        
+        // Wait a tiny bit for cleanup then start
+        setTimeout(() => {
+           recognitionRef.current?.start();
+           console.log("Recognition requested to start");
+        }, 100);
+      } catch (error) {
+        if (error.name !== "InvalidStateError") {
+          console.error("Start error:", error);
+        }
+      }
+    }
+  }
+
+
+  // ---------------------------------------------
+  // LANGUAGE DETECTION
+  // ---------------------------------------------
+  const detectLang = (text) => {
+    if (!text) return 'en-US';
+    // Detect Devanagari (Hindi)
+    if (/[\u0900-\u097F]/.test(text)) return 'hi-IN';
+    // Detect Arabic/Urdu script
+    if (/[\u0600-\u06FF]/.test(text)) return 'ur-PK';
+    // Detect Hinglish keywords (relaxed matching for romanized Hindi)
+    const hinglishWords = ['hai', 'nahi', 'kya', 'kyun', 'kaise', 'mera', 'tumhara',
+      'aapka', 'mujhe', 'aur', 'bhi', 'hi', 'karo', 'karna', 'bana', 'batao',
+      'main', 'hum', 'ap', 'tum', 'yeh', 'woh', 'kar', 'ek', 'sab', 'bahut',
+      'accha', 'theek', 'haan', 'bolna', 'sunna', 'dekho', 'bilkul', 'zaroor',
+      'kab', 'kahan', 'kitna', 'chahiye', 'milta', 'nahi', 'raha', 'rahi', 'ho',
+      'gaya', 'gayi', 'aata', 'ata'];
+    const words = text.toLowerCase().split(/\s+/);
+    const hinglishCount = words.filter(w => hinglishWords.includes(w)).length;
+    if (hinglishCount >= 1) return 'hi-IN';  // Even 1 Hinglish word means Hindi mode
+    return 'en-US';
+  };
+
+
+  // ---------------------------------------------
+  // AI SPEAK
+  // ---------------------------------------------
+  const speak = (text, inputLang) => {
+    const utterence = new SpeechSynthesisUtterance(text);
+
+    // Fix for Windows Chrome TTS garbage collection bug dropping onend events
+    window.utterances = window.utterances || [];
+    window.utterances.push(utterence);
+
+    // Use explicitly passed language, or detect from AI response as fallback
+    const lang = inputLang || detectLang(text);
+    utterence.lang = lang;
+
+    const voices = window.speechSynthesis.getVoices();
+
+    if (lang === 'hi-IN') {
+      // Best Hindi voices
+      const hindiVoice = voices.find(v => v.lang === 'hi-IN')
+        || voices.find(v => v.name.includes('Hindi'))
+        || voices.find(v => v.lang.startsWith('hi'));
+      if (hindiVoice) utterence.voice = hindiVoice;
+      utterence.rate = 0.95;
+    } else if (lang === 'ur-PK') {
+      const urduVoice = voices.find(v => v.lang === 'ur-PK' || v.lang.startsWith('ur'));
+      if (urduVoice) utterence.voice = urduVoice;
+    } else {
+      // Priority list for clear, high-quality English voices on Windows/Chrome
+      const premiumEnglishVoices = [
+        'Google US English',
+        'Google UK English Female',
+        'Microsoft Zira',
+        'Microsoft Aria',
+        'Microsoft Jenny',
+        'Microsoft Guy',
+        'Microsoft Mark'
+      ];
+
+      let selectedVoice = null;
+      for (const premiumName of premiumEnglishVoices) {
+        selectedVoice = voices.find(v => v.name.includes(premiumName));
+        if (selectedVoice) break;
+      }
+
+      if (!selectedVoice) {
+        selectedVoice = voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB' || v.lang.startsWith('en-'));
+      }
+      if (selectedVoice) utterence.voice = selectedVoice;
+      utterence.rate = 1.0;
+    }
+
+    isSpeakingRef.current = true
+
+    utterence.onend = () => {
+      // setAiText(""); // Do not clear AI text so it stays on screen
+      isSpeakingRef.current = false;
+      
+      // Cleanup global reference
+      if (window.utterances) {
+        window.utterances = window.utterances.filter(u => u !== utterence);
+      }
+
+      setTimeout(() => {
+        startRecognition();
+      }, 800);
+    };
+
+    utterence.onerror = (e) => {
+      console.error("SpeechSynthesisUtterance error:", e);
+      isSpeakingRef.current = false;
+      if (window.utterances) {
+        window.utterances = window.utterances.filter(u => u !== utterence);
+      }
+      setTimeout(() => {
+        startRecognition();
+      }, 800);
+    };
+
+    synth.cancel();
+    synth.speak(utterence);
+  }
+
+
+  // ---------------------------------------------
+  // Helper: normalize/extract phone number
+  // Returns E.164-ish number string (e.g. +911234567890) or null
+  // ---------------------------------------------
+  const extractPhoneNumber = (text) => {
+    if (!text) return null;
+    // find sequences of digits (10+)
+    const digits = text.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      // take last 10 digits as local number (common pattern)
+      const last10 = digits.slice(-10);
+      // if there is a country code (more than 10), use it
+      if (digits.length === 10) {
+        // assume India if 10 digits
+        return `+91${last10}`;
+      } else if (digits.length === 11 && digits.startsWith('0')) {
+        // leading 0 removed, assume +91
+        return `+91${digits.slice(-10)}`;
+      } else if (digits.length === 12 && digits.startsWith('91')) {
+        return `+${digits}`;
+      } else if (digits.length > 10) {
+        // fallback: prefix with + if there's an international code present
+        return `+${digits}`;
+      } else {
+        return `+91${last10}`;
+      }
+    }
+    return null;
+  }
+
+
+  // ---------------------------------------------
+  // COMMAND HANDLER (includes calling features)
+  // ---------------------------------------------
+  const handleCommand = (data) => {
+    const { type, userInput, response } = data || {}
+
+    // Detect the language the user typed in — and speak in THAT language
+    const userLang = detectLang(userInput || '');
+
+    // speak the response (if any) in the user's language
+    if (response) speak(response, userLang);
+
+    // PHONE CALL (opens dialer)
+    if (type === 'call-phone' || type === 'phone-call') {
+      // try provided number field, else extract from userInput
+      const numberFromData = data?.number || extractPhoneNumber(userInput);
+      if (numberFromData) {
+        // open system dialer
+        window.open(`tel:${numberFromData}`, '_self');
+        return;
+      } else {
+        console.warn("No phone number found for call.");
+      }
+    }
+
+    // WHATSAPP CHAT
+    if (type === 'whatsapp-chat' || type === 'whatsapp-message') {
+      const numberFromData = data?.number || extractPhoneNumber(userInput);
+      if (numberFromData) {
+        // remove leading '+' for wa.me
+        const plain = numberFromData.replace(/\+/g, '');
+        window.open(`https://wa.me/${plain}`, '_blank');
+        return;
+      } else {
+        console.warn("No phone number found for WhatsApp chat.");
+      }
+    }
+
+    // WHATSAPP VOICE CALL (Android/WhatsApp handler may open)
+    if (type === 'whatsapp-call') {
+      const numberFromData = data?.number || extractPhoneNumber(userInput);
+      if (numberFromData) {
+        const plain = numberFromData.replace(/\+/g, '');
+        // ?call is not an official documented parameter but some clients handle it
+        window.open(`https://wa.me/${plain}?call`, '_blank');
+        return;
+      } else {
+        console.warn("No phone number found for WhatsApp call.");
+      }
+    }
+
+    // WHATSAPP VIDEO CALL
+    if (type === 'whatsapp-video') {
+      const numberFromData = data?.number || extractPhoneNumber(userInput);
+      if (numberFromData) {
+        const plain = numberFromData.replace(/\+/g, '');
+        window.open(`https://wa.me/${plain}?video`, '_blank');
+        return;
+      } else {
+        console.warn("No phone number found for WhatsApp video.");
+      }
+    }
+
+    // Existing command handlers preserved
+    // !!!SYSTEM DEBUG!!!
+    console.log("RECOGNIZED ACTION TYPE:", type, "TARGET:", data?.actionTarget);
+    
+    // Clear old generated image if this is a new type of command
+    if (type !== 'generate-image') {
+      setGeneratedImgUrl(null);
+    }
+
+    if (type !== 'general' && type !== 'coding-helper' && type !== 'career-mentor') {
+       setAiText(response);
+    }
+
+    if (type === 'google-search') {
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(userInput)}`, '_blank');
+    }
+
+    if (type === 'calculator-open') {
+      window.open(`https://www.google.com/search?q=calculator`, '_blank');
+    }
+
+    if (type === 'instagram-open') {
+      window.open(`https://www.instagram.com/`, '_blank');
+    }
+
+    if (type === 'facebook-open') {
+      window.open(`https://www.facebook.com/`, '_blank');
+    }
+
+    if (type === "weather-show") {
+      window.open(`https://www.google.com/search?q=weather`, '_blank');
+    }
+
+    if (type === 'youtube-search' || type === 'youtube-play') {
+      window.open(
+        `https://www.youtube.com/results?search_query=${encodeURIComponent(userInput)}`,
+        '_blank'
+      );
+    }
+
+    if (type === 'open-website') {
+      const target = data?.actionTarget || userInput.replace('open ', '').trim();
+      if (target) {
+        // Simple heuristic: if it doesn't have a dot, assume .com
+        const url = target.includes('.') ? `https://${target}` : `https://www.${target}.com`;
+        window.open(url, '_blank');
+      }
+    }
+
+    if (type === 'play-song') {
+      const target = data?.actionTarget || userInput.replace('play ', '').trim();
+      if (target) {
+        // Open YouTube music search or general YouTube search for the song
+        window.open(
+          `https://music.youtube.com/search?q=${encodeURIComponent(target)}`,
+          '_blank'
+        );
+      }
+    }
+
+    if (type === 'open-app' || type === 'automation-command') {
+      const target = data?.actionTarget;
+      if (target) {
+        axios.post(`${serverUrl}/api/user/open-app`, { appName: target }, { withCredentials: true })
+          .then(res => console.log("Opened app:", res.data))
+          .catch(err => console.error("Failed to open app:", err));
+      }
+    }
+
+    if (type === 'set-reminder') {
+      const target = data?.actionTarget; // e.g., "check oven in 10 minutes"
+      if (target) {
+        // Naive extraction of minutes: find first number in the string
+        const match = target.match(/\d+/);
+        const minutes = match ? parseInt(match[0], 10) : 1;
+        setTimeout(() => {
+          const utter = new SpeechSynthesisUtterance(`Reminder: ${target}`);
+          // default to system voice
+          window.speechSynthesis.speak(utter);
+          alert(`Reminder: ${target}`);
+        }, minutes * 60 * 1000);
+      }
+    }
+
+    if (type === 'expense-tracker') {
+      const target = data?.actionTarget || userInput.replace('spent ', '').replace('expense ', '').trim();
+      if (target) {
+        const entry = { 
+          item: target, 
+          id: Date.now(), 
+          date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) 
+        };
+        const current = JSON.parse(localStorage.getItem("virtual_assistant_expenses") || "[]");
+        current.unshift(entry);
+        localStorage.setItem("virtual_assistant_expenses", JSON.stringify(current));
+        setExpenses(current);
+        
+        // AUTO-SHOW Dashboard for instant feedback
+        setShowExpenses(true);
+        setTimeout(() => setShowExpenses(false), 2000); 
+      }
+    }
+
+    if (type === 'expense-show') {
+       const current = JSON.parse(localStorage.getItem("virtual_assistant_expenses") || "[]");
+       setExpenses(current);
+       setShowExpenses(true);
+    }
+
+    if (type === 'expense-clear') {
+       localStorage.setItem("virtual_assistant_expenses", "[]");
+       setExpenses([]);
+       setShowExpenses(false);
+    }
+
+    if (type === 'mood-track') {
+       const mood = data?.actionTarget || userInput.replace('feeling ', '').replace('mood ', '').trim();
+       if (mood) {
+         const entry = {
+           id: Date.now(),
+           text: mood,
+           date: new Date().toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+         };
+         const current = JSON.parse(localStorage.getItem("virtual_assistant_moods") || "[]");
+         current.unshift(entry);
+         localStorage.setItem("virtual_assistant_moods", JSON.stringify(current));
+         setMoods(current);
+         setShowMoods(true);
+         setTimeout(() => setShowMoods(false), 3000);
+       }
+    }
+
+    if (type === 'mood-show') {
+       const current = JSON.parse(localStorage.getItem("virtual_assistant_moods") || "[]");
+       setMoods(current);
+       setShowMoods(true);
+    }
+
+    // ── TODO LIST COMMANDS ──
+    if (type === 'todo-add') {
+      const target = data?.actionTarget;
+      if (target) {
+        setTodos(prev => {
+          const newTodos = [...prev, { id: Date.now(), text: target, done: false }];
+          localStorage.setItem("virtual_assistant_todos", JSON.stringify(newTodos));
+          return newTodos;
+        });
+        setShowTodos(true);
+      }
+    }
+    if (type === 'todo-remove') {
+      const target = data?.actionTarget?.toLowerCase();
+      if (target) {
+        setTodos(prev => {
+          const newTodos = prev.filter(t => !t.text.toLowerCase().includes(target));
+          localStorage.setItem("virtual_assistant_todos", JSON.stringify(newTodos));
+          return newTodos;
+        });
+        setShowTodos(true);
+      }
+    }
+    if (type === 'todo-show') {
+      setShowTodos(true);
+    }
+
+  if (type === 'generate-image') {
+    if (data.image) {
+      console.log("PIPELINE: Displaying generated image from backend directly.");
+      setGeneratedImgUrl(data.image);
+    } else {
+      console.warn("PIPELINE: No image returned from backend.");
+      setGeneratedImgUrl(null);
+    }
+  }
+
+    if (type === 'youtube-summary') {
+      const target = data?.actionTarget;
+      if (target) {
+        setAiText("Fetching and summarizing YouTube video...");
+        axios.post(`${serverUrl}/api/user/summarize-youtube`, { url: target }, { withCredentials: true })
+          .then(res => {
+            setSummaryText(res.data.response);
+            speak("Here is the summary of the video.");
+          })
+          .catch(err => console.error(err));
+      }
+    }
+
+    if (type === 'summarize-pdf' || type === 'analyze-image') {
+      // If we already have a response from the AI, just show it in the summary box
+      // instead of re-calling the API.
+      if (data.response) {
+        setSummaryText(data.response);
+        return;
+      }
+
+      // Fallback for voice commands if the file is already selected but no analysis done
+      if (type === 'summarize-pdf') {
+        if (!pdfFile) {
+          setAiText("Please select a PDF file first.");
+          speak("Please select a PDF file first.");
+          return;
+        }
+        setAiText("Summarizing the PDF...");
+        const formData = new FormData();
+        formData.append("pdf", pdfFile);
+        axios.post(`${serverUrl}/api/user/summarize-pdf`, formData, {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+          .then(res => {
+            setSummaryText(res.data.response);
+            speak("I have finished summarizing the PDF.");
+          })
+          .catch(err => console.error(err));
+      }
+
+      if (type === 'analyze-image') {
+        const target = data?.actionTarget;
+        if (!imageFile) {
+          setAiText("Please select an image file first.");
+          speak("Please select an image file first.");
+          return;
+        }
+        setAiText("Analyzing the image...");
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        if (target) {
+          formData.append("prompt", target);
+        }
+        axios.post(`${serverUrl}/api/user/analyze-image`, formData, {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+          .then(res => {
+            setSummaryText(res.data.response);
+            speak(res.data.response);
+          })
+          .catch(err => console.error(err));
+      }
+    }
+  };
+
+
+  // ---------------------------------------------
+  // HANDLE TYPED MESSAGE (NEW)
+  // ---------------------------------------------
+  const handleTypedSend = async () => {
+    // If there is no typed message and no file attached, do nothing
+    if (!typedMessage.trim() && !imageFile && !pdfFile) return;
+
+    let message = typedMessage;
+    // If only a file is attached, create a default prompt for Gemini to route
+    if (!message.trim()) {
+      if (imageFile) message = "what is in this image?";
+      else if (pdfFile) message = "summarize the uploaded pdf";
+    }
+
+    // stop recognition briefly so it doesn't capture the typed text
+    recognitionRef.current?.stop();
+    isRecognizingRef.current = false;
+
+    // Show the actual typed message if present, or a placeholder just for visuals
+    setUserText(typedMessage.trim() ? typedMessage : (imageFile ? "Sent an image..." : "Sent a file..."));
+    
+    // Capture files to send (prioritize image if both present, but typically only one is shown)
+    const fileToSend = imageFile || pdfFile;
+    
+    setTypedMessage("");
+
+    try {
+      setAiText("");
+      const userLang = detectLang(message);
+      console.log("!!!DEBUG!!! Sending message:", message, "File:", fileToSend?.name, "Type:", fileToSend?.type);
+      const data = await getGeminiResponse(message, fileToSend, userLang);
+      console.log("Typed Gemini response full data:", data);
+
+      if (data && data.response) {
+        handleCommand(data);
+        setAiText(data.response);
+        speak(data.response);
+        
+        // Mark conversation as active for the next 30 seconds (no wake word needed for follow-up)
+        conversationActiveRef.current = true;
+        if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
+        activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
+      } else {
+        const errorMsg = "I'm sorry, I'm having trouble thinking right now. Please check if your API key is valid.";
+        setAiText(errorMsg);
+        speak(errorMsg);
+      }
+    } catch (err) {
+      console.error("Error in handleTypedSend:", err);
+      setAiText("Connection error. Is the backend running?");
+    } finally {
+      setImageFile(null);
+      setPdfFile(null);
+      // Restart recognition so it keeps listening for the next voice command
+      setTimeout(() => {
+        startRecognition();
+      }, 1000);
+    }
+  };
+
+
+  // ---------------------------------------------
+  // USE EFFECT - SPEECH RECOGNITION ENGINE
+  // ---------------------------------------------
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = true;
+    recognition.lang = 'en-IN'; // Changed to en-IN for better Indian accent and Hinglish support
+    recognition.interimResults = false;
+
+    recognitionRef.current = recognition;
+
+    let isMounted = true;
+
+    const startTimeout = setTimeout(() => {
+      if (isMounted && !isSpeakingRef.current && !isRecognizingRef.current) {
+        try {
+          recognition.start();
+          console.log("Recognition requested to start");
+        } catch (e) {
+          if (e.name !== "InvalidStateError") console.error(e);
+        }
+      }
+    }, 1000);
+
+    recognition.onstart = () => {
+      isRecognizingRef.current = true;
+      setListening(true);
+    };
+
+    recognition.onend = () => {
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      if (isMounted && !isSpeakingRef.current) {
+        setTimeout(() => {
+          try {
+            recognition.start();
+            console.log("Recognition restarted");
+          } catch (e) {
+            if (e.name !== "InvalidStateError") console.error(e);
+          }
+        }, 1000);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.warn("Recognition error:", event.error);
+
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
+        setTimeout(() => {
+          try {
+            recognition.start();
+            console.log("Recognition restarted after error");
+          } catch (e) {
+            if (e.name !== "InvalidStateError") console.error(e);
+          }
+        }, 1000);
+      }
+    };
+
+    recognition.onresult = async (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript.trim();
+      const assistantName = userData?.assistantName?.toLowerCase() || "";
+      const lowerTranscript = transcript.toLowerCase();
+
+      // Check if transcript starts with assistant name or contains it (with phonetic fallbacks for internal model)
+      const hasWakeWord = !assistantName 
+        || lowerTranscript.includes(assistantName)
+        || conversationActiveRef.current // If we just talked, no need for name
+        || transcript.split(' ').length > 3 // If they say a long sentence, they are likely talking to the AI
+        || (assistantName.includes('mia') && (lowerTranscript.includes('miya') || lowerTranscript.includes('maya') || lowerTranscript.includes('miah') || lowerTranscript.includes('me a')));
+
+      if (hasWakeWord) {
+        setAiText("");
+        setUserText(transcript);
+
+        recognition.stop();
+        isRecognizingRef.current = false;
+        setListening(false);
+
+        const userLang = detectLang(transcript);
+        const data = await getGeminiResponse(transcript, null, userLang);
+        console.log("Gemini response data:", data);
+
+        if (data && data.response) {
+          handleCommand(data);
+          setAiText(data.response);
+          speak(data.response);
+
+          // Keep active for follow-ups
+          conversationActiveRef.current = true;
+          if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
+          activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
+        } else {
+          const errorMsg = "I'm sorry, I'm having trouble thinking right now. Please check if your API key is valid.";
+          setAiText(errorMsg);
+          speak(errorMsg);
+        }
+
+        // setUserText(""); // Do not clear User text so it stays on screen
+      } else {
+        console.log("Wake word not detected in:", transcript);
+      }
+    };
+
+    // First greeting
+    setTimeout(() => {
+      speak(`Hello ${userData.name}, what can I help you with?`, 'hi-IN');
+    }, 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(startTimeout);
+      recognition.stop();
+      setListening(false);
+      isRecognizingRef.current = false;
+    };
+  }, [userData]);
+
+  // ---------------------------------------------
+  // AURORA CANVAS BACKGROUND — WOW Edition
+  // ---------------------------------------------
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── Stars ──────────────────────────────────
+    const stars = Array.from({ length: 260 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.4 + 0.3,
+      base: Math.random() * 0.6 + 0.3,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.02 + 0.005,
+    }));
+
+    // ── Shooting stars ──────────────────────────
+    const shoots = [];
+    const spawnShoot = () => {
+      shoots.push({
+        x: Math.random() * 0.7 + 0.1,
+        y: Math.random() * 0.3,
+        len: Math.random() * 0.12 + 0.06,
+        speed: Math.random() * 0.007 + 0.004,
+        life: 1,
+        angle: Math.PI / 4 + (Math.random() - 0.5) * 0.4,
+      });
+    };
+
+    // ── Nebula blobs ────────────────────────────
+    const blobs = [
+      { x: 0.12, y: 0.22, r: 0.50, dx: 0.00022, dy: 0.00015, color: [30, 80, 255], a: 0.28 },
+      { x: 0.78, y: 0.55, r: 0.42, dx: -0.00018, dy: 0.00020, color: [120, 0, 240], a: 0.24 },
+      { x: 0.50, y: 0.80, r: 0.38, dx: 0.00015, dy: -0.00012, color: [0, 180, 255], a: 0.22 },
+      { x: 0.88, y: 0.12, r: 0.30, dx: -0.00020, dy: 0.00018, color: [200, 0, 220], a: 0.20 },
+      { x: 0.28, y: 0.68, r: 0.28, dx: 0.00018, dy: -0.00022, color: [0, 220, 200], a: 0.18 },
+      { x: 0.62, y: 0.35, r: 0.24, dx: -0.00014, dy: -0.00016, color: [80, 60, 255], a: 0.15 },
+    ];
+
+    // ── Grid ────────────────────────────────────
+    const drawGrid = (W, H) => {
+      const size = 60;
+      ctx.strokeStyle = 'rgba(80,120,255,0.04)';
+      ctx.lineWidth = 0.5;
+      for (let gx = 0; gx < W; gx += size) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+      }
+      for (let gy = 0; gy < H; gy += size) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+      }
+    };
+
+    let t = 0;
+    let nextShoot = 60;
+
+    const draw = () => {
+      t++;
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // ── Base ──
+      ctx.fillStyle = '#020818';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Grid ──
+      drawGrid(W, H);
+
+      // ── Nebula blobs ──
+      blobs.forEach(b => {
+        b.x += b.dx * Math.sin(t * 0.002 + b.r);
+        b.y += b.dy * Math.cos(t * 0.0018 + b.r);
+        if (b.x < 0.04 || b.x > 0.96) b.dx *= -1;
+        if (b.y < 0.04 || b.y > 0.96) b.dy *= -1;
+        const cx = b.x * W, cy = b.y * H;
+        const rad = b.r * Math.min(W, H);
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+        const pulse = 0.12 * Math.sin(t * 0.016 + b.r);
+        const [r, gr, bl] = b.color;
+        g.addColorStop(0, `rgba(${r},${gr},${bl},${b.a + pulse})`);
+        g.addColorStop(0.45, `rgba(${r},${gr},${bl},${(b.a + pulse) * 0.35})`);
+        g.addColorStop(1, `rgba(${r},${gr},${bl},0)`);
+        ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = g; ctx.fill();
+      });
+
+      // ── Stars (twinkle) ──
+      stars.forEach(s => {
+        const opacity = s.base + 0.35 * Math.sin(t * s.speed + s.phase);
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, opacity))})`;
+        ctx.fill();
+      });
+
+      // ── Shooting stars ──
+      if (t >= nextShoot) { spawnShoot(); nextShoot = t + 90 + Math.random() * 180; }
+      for (let i = shoots.length - 1; i >= 0; i--) {
+        const s = shoots[i];
+        s.x += Math.cos(s.angle) * s.speed;
+        s.y += Math.sin(s.angle) * s.speed;
+        s.life -= 0.018;
+        if (s.life <= 0) { shoots.splice(i, 1); continue; }
+        const x1 = s.x * W, y1 = s.y * H;
+        const x0 = x1 - Math.cos(s.angle) * s.len * W;
+        const y0 = y1 - Math.sin(s.angle) * s.len * H;
+        const sg = ctx.createLinearGradient(x0, y0, x1, y1);
+        sg.addColorStop(0, `rgba(255,255,255,0)`);
+        sg.addColorStop(0.6, `rgba(180,220,255,${s.life * 0.6})`);
+        sg.addColorStop(1, `rgba(255,255,255,${s.life})`);
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+        ctx.strokeStyle = sg; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+
+      // ── Centre vignette (depth) ──
+      const vg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.75);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(0.6, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,8,0.55)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+
+  // ---------------------------------------------
+  // RENDER UI — Premium Aesthetic
+  // ---------------------------------------------
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* Aurora Canvas Background */}
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }} />
+
+      {/* All content sits above canvas — Scrollable container */}
+      <div className="custom-scrollbar" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'column', gap: '15px', overflowY: 'auto', padding: '40px 10px 100px 10px' }}>
+
+   {/* ── Mobile hamburger ── */}
+        <CgMenuRight
+          className="lg:hidden text-white/70 absolute top-5 right-5 w-6 h-6 cursor-pointer hover:text-white transition-colors"
+          onClick={() => setHam(true)}
+        />
+
+        {/* ── Mobile Sidebar ── */}
+        <div
+          className={`va-sidebar absolute lg:hidden top-0 right-0 w-[280px] h-full p-6 flex flex-col gap-5 z-50
+          ${ham ? "translate-x-0" : "translate-x-full"} transition-transform duration-300`}
+        >
+          <RxCross1
+            className="text-white/70 absolute top-5 right-5 w-5 h-5 cursor-pointer hover:text-white transition-colors"
+            onClick={() => setHam(false)}
+          />
+          <h2 className="text-white/90 font-semibold text-lg mt-8">Menu</h2>
+          <button className="va-btn" onClick={handleLogOut}>Log Out</button>
+          <button className="va-btn" onClick={() => navigate("/customize")}>Customize Assistant</button>
+          <div className="w-full h-px bg-white/10 my-1" />
+
+          <div className="flex justify-between items-center mt-2">
+            <h3 className="text-white/60 text-sm font-medium tracking-widest uppercase">History</h3>
+            {userData.history?.length > 0 && (
+              <button className="text-xs text-red-500 hover:text-red-400 bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors" onClick={handleDeleteHistory}>Clear</button>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto flex flex-col gap-3 custom-scrollbar">
+            {userData.history?.length === 0 ? (
+              <p className="text-white/30 text-sm italic">No history yet</p>
+            ) : (
+              userData.history?.map((his, i) => (
+                <div key={i} className="text-white/60 text-sm bg-white/5 p-3 rounded-lg border border-white/5 hover:bg-white/10 hover:text-white/90 transition-all cursor-default leading-relaxed text-left w-full break-words">
+                  {his}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* ── Desktop History Panel (Left Side) ── */}
+        <div className={`hidden lg:flex flex-col absolute top-6 left-6 w-[320px] h-[calc(100vh-48px)] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 z-40 shadow-2xl transition-all duration-500 origin-left ${showHistory ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-12 scale-95 pointer-events-none'}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-white/80 font-medium tracking-wide">Command History</h3>
+            {userData.history?.length > 0 && (
+              <button className="text-xs text-red-400 hover:text-red-300 transition-colors bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-full" onClick={handleDeleteHistory}>Clear</button>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
+            {userData.history?.length === 0 ? (
+              <p className="text-white/30 text-sm text-center mt-10">No history yet</p>
+            ) : (
+              userData.history?.map((his, i) => (
+                <div key={i} className="text-white/60 text-sm bg-black/20 p-4 rounded-2xl border border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white/95 transition-all duration-300 cursor-default leading-relaxed text-left w-full break-words shadow-sm">
+                  {his}
+                </div>
+              )).reverse()
+            )}
+          </div>
+        </div>
+
+        {/* ── Desktop Buttons (Right Side) ── */}
+        <div className="hidden lg:flex flex-col gap-3 absolute top-6 right-6 z-40">
+          <button className={`va-btn shadow-xl transition-all ${showHistory ? 'bg-blue-600/40' : 'bg-white/5'}`} onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? "Hide History" : "Show History"}
+          </button>
+          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10" onClick={handleLogOut}>Log Out</button>
+          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10" onClick={() => navigate("/customize")}>Customize Assistant</button>
+        </div>
+
+        {/* ── Assistant Glass Card ── */}
+        <div className="va-card">
+          <img src={userData?.assistantImage} alt="Assistant" className="w-full h-full object-cover" />
+        </div>
+
+        {/* ── Assistant Name ── */}
+        <p className="va-name">I'm {userData?.assistantName}</p>
+
+        {/* ── Listening indicator (no bubble) ── */}
+        {listening ? (
+          <div className="va-status">
+            <span className="va-status-dot" />
+            <span>Listening…</span>
+          </div>
+        ) : (
+          <div className="va-status" style={{ opacity: 0.4 }}>
+            <span className="va-status-dot" style={{ background: '#94a3b8', animationPlayState: 'paused' }} />
+            <span>Ready</span>
+          </div>
+        )}
+
+        {/* ── GIF indicator ── */}
+        {!aiText && <img src={userImg} alt="user" className="w-[140px] opacity-90" />}
+        {aiText && <img src={aiImg} alt="ai" className="w-[140px] opacity-90" />}
+
+        {/* ── Live text bubbles ── */}
+        <div className="va-chat-container" ref={chatContainerRef}>
+          {userText && (
+            <div className="va-bubble !bg-black/40 !border-white/10 !text-white/90 self-end ml-auto text-right">{userText}</div>
+          )}
+          {aiText && (
+            <div className="va-bubble !bg-blue-500/20 !border-blue-400/30 !text-white self-start mr-auto text-left">{aiText}</div>
+          )}
+        </div>
+        
+
+        {/* ── FILE PREVIEWS (Show above input bar if attached) ── */}
+        <div className="w-[340px] flex gap-2 mb-[-10px] z-10 px-2 mt-2">
+          {pdfFile && (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg text-xs text-white/90">
+              <FiPaperclip className="text-blue-400" size={14} />
+              <span className="truncate max-w-[100px]">{pdfFile.name}</span>
+              <button onClick={() => setPdfFile(null)} className="hover:text-red-400 ml-1"><RxCross1 size={12} /></button>
+            </div>
+          )}
+          {imageFile && (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg text-xs text-white/90">
+              <FiImage className="text-purple-400" size={14} />
+              <span className="truncate max-w-[100px]">{imageFile.name}</span>
+              <button onClick={() => setImageFile(null)} className="hover:text-red-400 ml-1"><RxCross1 size={12} /></button>
+            </div>
+          )}
+        </div>
+
+
+        {/* ── Input bar ── */}
+        <div className="va-input-bar mt-1">
+
+          {/* ChatGPT-style attach buttons */}
+          <div className="flex items-center gap-1 text-white/50 ml-1">
+            <label className="cursor-pointer p-2 rounded-full hover:bg-white/10 hover:text-white transition-all flex items-center justify-center shadow-sm" title="Attach PDF">
+              <FiPaperclip size={18} />
+              <input type="file" accept="application/pdf" className="hidden" onChange={(e) => setPdfFile(e.target.files[0])} />
+            </label>
+            <label className="cursor-pointer p-2 rounded-full hover:bg-white/10 hover:text-white transition-all flex items-center justify-center mr-1 shadow-sm" title="Attach Image">
+              <FiImage size={18} />
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => setImageFile(e.target.files[0])} />
+            </label>
+          </div>
+
+          <div className={`va-mic-wrapper ${listening ? 'listening' : 'idle'} mr-1`}>
+            <button
+              className={`va-mic-btn ${listening ? 'listening' : 'idle'}`}
+              onClick={() => {
+                if (listening) {
+                  recognitionRef.current?.stop();
+                  setListening(false);
+                } else {
+                  startRecognition();
+                }
+              }}
+              title={listening ? "Listening..." : "Click to speak"}
+            >
+              <FiMic />
+            </button>
+          </div>
+
+          <input
+            type="text"
+            value={typedMessage}
+            onChange={(e) => setTypedMessage(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleTypedSend()}
+            placeholder="Ask something…"
+          />
+
+          {/* Send button */}
+          <button className="va-send-btn flex items-center justify-center p-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors" onClick={handleTypedSend}>
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </div>
+
+        {/* ── ADVANCED ML OUTPUTS ── */}
+        {(generatedImgUrl || showTodos || summaryText) && (
+          <div className="flex flex-col gap-4 w-11/12 max-w-2xl mb-6 items-center z-10">
+            {showTodos && (
+              <div className="p-5 va-glass rounded-2xl w-full max-w-lg max-h-[350px] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4 sticky top-0 pb-2 border-b border-white/10 z-10 bg-black/20 backdrop-blur-md">
+                  <h3 className="text-white font-medium flex items-center gap-2">
+                    <span className="text-blue-400">✓</span> My Tasks
+                  </h3>
+                  <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors px-2 py-1 rounded hover:bg-white/5" onClick={() => setShowTodos(false)}>Close</button>
+                </div>
+                {todos.length === 0 ? (
+                  <p className="text-white/40 text-sm text-center py-4 italic">No tasks. Tell me to "add buy milk to my todolist".</p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {todos.map(todo => (
+                      <li key={todo.id} className="text-white/80 text-sm flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group">
+                        <span>{todo.text}</span>
+                        <button 
+                          onClick={() => {
+                             setTodos(prev => {
+                               const updated = prev.filter(t => t.id !== todo.id);
+                               localStorage.setItem("virtual_assistant_todos", JSON.stringify(updated));
+                               return updated;
+                             });
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-300 transition-opacity"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {generatedImgUrl && (
+              <div className="p-4 va-glass rounded-2xl flex flex-col items-center w-full max-w-[480px]">
+                <div className="w-full flex justify-between items-center mb-3 px-1">
+                  <h3 className="text-white/90 font-medium text-sm flex items-center gap-2">
+                    <span className="text-purple-400 text-lg">✨</span> Generated Image
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 flex items-center gap-1 font-medium shadow-sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = generatedImgUrl;
+                        link.download = `AI_Generated_${Date.now()}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      title="Download Image"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      Download
+                    </button>
+                    <button className="text-xs text-purple-400 hover:text-purple-300 transition-colors px-2 py-1.5 rounded hover:bg-white/5 font-medium" onClick={() => setGeneratedImgUrl(null)}>Close</button>
+                  </div>
+                </div>
+                <div className="relative w-full flex items-center justify-center min-h-[250px] rounded-xl overflow-hidden bg-black/40 border border-white/5 shadow-inner">
+                  <div id="img-spinner" className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                    <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                    <span className="text-white/40 text-xs">Bringing imagination to life…</span>
+                  </div>
+                  <img
+                    src={generatedImgUrl}
+                    key={generatedImgUrl}
+                    alt="AI Generated"
+                    className="w-full h-auto object-contain rounded-xl"
+                    style={{ opacity: 0, transition: 'opacity 0.6s ease-out' }}
+                    referrerPolicy="no-referrer"
+                    onLoad={(e) => {
+                      e.target.style.opacity = 1;
+                      const spinner = document.getElementById('img-spinner');
+                      if (spinner) spinner.style.display = 'none';
+                    }}
+                    onError={(e) => {
+                      const spinner = document.getElementById('img-spinner');
+                      if (spinner) spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px;text-align:center">Could not load the image. Please try again.</span>';
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {summaryText && (
+              <div className="p-5 va-glass rounded-2xl w-full max-w-lg max-h-[350px] overflow-y-auto">
+                <div className="flex justify-between items-center mb-2 sticky top-0 pb-2 z-10 border-b border-white/10 bg-black/20 backdrop-blur-md">
+                  <h3 className="text-white font-medium">Analysis / Summary</h3>
+                  <button className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors px-2 py-1 rounded hover:bg-white/5" onClick={() => setSummaryText("")}>Close</button>
+                </div>
+                <p className="text-white/80 whitespace-pre-wrap text-sm leading-relaxed">{summaryText}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- EXPENSE DASHBOARD MODAL --- */}
+        {showExpenses && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="va-glass w-full max-w-[500px] max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl border border-white/10">
+              {/* Header */}
+              <div className="p-6 pb-2 flex items-center justify-between border-b border-white/10">
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <span className="p-2 bg-blue-500/20 rounded-xl text-blue-400">📊</span>
+                    Expense Tracker
+                  </h3>
+                  <p className="text-white/50 text-xs mt-1">Your recent spending history</p>
+                </div>
+                <button 
+                  onClick={() => setShowExpenses(false)}
+                  className="p-2 hover:bg-white/10 rounded-full text-white/50 transition-all"
+                >
+                  <RxCross1 size={20} />
+                </button>
+              </div>
+
+              {/* List Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {expenses.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center opacity-50">
+                    <div className="text-5xl mb-4">📉</div>
+                    <p className="text-white text-lg font-medium">No expenses yet</p>
+                    <p className="text-white/60 text-sm mt-1">Tell me "Spent 500 on dinner"</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 gap-3">
+                      {expenses.map((ex, idx) => (
+                        <div key={ex.id || idx} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/10 group transition-all">
+                          <div className="flex flex-col">
+                            <span className="text-white/90 font-medium">{ex.item}</span>
+                            <span className="text-white/40 text-[10px] uppercase font-bold tracking-wider">{ex.date}</span>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-red-400/10 text-red-400 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-all" 
+                               onClick={() => {
+                                 const updated = expenses.filter((_, i) => i !== idx);
+                                 setExpenses(updated);
+                                 localStorage.setItem("virtual_assistant_expenses", JSON.stringify(updated));
+                               }}>
+                            <RxCross1 size={12} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Total Footer */}
+              {expenses.length > 0 && (
+                <div className="p-6 bg-gradient-to-t from-blue-600/20 to-transparent border-t border-white/10">
+                   <div className="flex items-center justify-between">
+                      <span className="text-white/60 font-medium">Monthly Total Estimated</span>
+                      <span className="text-2xl font-black text-blue-400 tracking-tighter">
+                         ₹ {expenses.reduce((sum, e) => {
+                            const val = e.item.match(/\d+/);
+                            return sum + (val ? parseInt(val[0]) : 0);
+                         }, 0).toLocaleString()}
+                      </span>
+                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* --- MENTAL HEALTH / MOOD MODAL --- */}
+        {showMoods && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <div className="va-glass w-full max-w-[480px] max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/20">
+              {/* Wellness Header */}
+              <div className="p-6 pb-2 flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                    <span className="p-2 bg-purple-500/20 rounded-xl text-purple-400">🧘‍♀️</span>
+                    Mood Journey
+                  </h3>
+                  <p className="text-white/50 text-xs mt-1">Your emotional well-being timeline</p>
+                </div>
+                <button 
+                  onClick={() => setShowMoods(false)}
+                  className="p-2 hover:bg-white/10 rounded-full text-white/50 transition-all"
+                >
+                  <RxCross1 size={20} />
+                </button>
+              </div>
+
+              {/* Mood Feed */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {moods.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center opacity-50">
+                    <div className="text-5xl mb-4">🌈</div>
+                    <p className="text-white text-lg font-medium">Clear mind, no logs yet</p>
+                    <p className="text-white/60 text-sm mt-1">Say "I am feeling happy" to track</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {moods.map((m, idx) => {
+                       const moodIcon = (str) => {
+                          const s = str.toLowerCase();
+                          if (s.includes('happy') || s.includes('good') || s.includes('great')) return "😊";
+                          if (s.includes('sad') || s.includes('low') || s.includes('bad')) return "😢";
+                          if (s.includes('angry') || s.includes('mad')) return "😠";
+                          if (s.includes('tired') || s.includes('sleepy')) return "😴";
+                          if (s.includes('stress') || s.includes('anxiety')) return "😰";
+                          if (s.includes('productive') || s.includes('focus')) return "🚀";
+                          return "🧘";
+                       };
+                       return (
+                         <div key={m.id || idx} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-all transform hover:scale-[1.01]">
+                           <span className="text-2xl">{moodIcon(m.text)}</span>
+                           <div className="flex flex-col">
+                             <span className="text-white/90 font-medium capitalize">{m.text}</span>
+                             <span className="text-white/30 text-[10px] uppercase font-bold">{m.date}</span>
+                           </div>
+                         </div>
+                       );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Suggestion */}
+              {moods.length > 0 && (
+                 <div className="p-6 bg-gradient-to-t from-purple-600/10 to-transparent border-t border-white/10">
+                    <p className="text-white/60 text-xs italic text-center">
+                       "Take a deep breath. You are doing great."
+                    </p>
+                 </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+export default Home;

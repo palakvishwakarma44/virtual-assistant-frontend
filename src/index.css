@@ -1,0 +1,598 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* =============================================
+   ROOT & RESET
+   ============================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #020818;
+  overflow: hidden; /* Main app is usually non-scrolling, but internal parts can be */
+}
+
+/* =============================================
+   ANIMATED BACKGROUND & CYBER GRID
+   ============================================= */
+.va-bg {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #030614;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 16px; 
+}
+
+/* Base glowing gradient underlay */
+.va-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 10% 90%, rgba(139, 92, 246, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 90% 85%, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* High-Tech Animated Cyber Grid */
+.va-bg::after {
+  content: '';
+  position: fixed;
+  inset: -100%;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform: perspective(600px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+  animation: gridMove 15s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.8;
+}
+
+@keyframes gridMove {
+  0% { transform: perspective(600px) rotateX(60deg) translateY(0) translateZ(-200px); }
+  100% { transform: perspective(600px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+}
+
+/* Shooting Star */
+.va-shooting-star {
+  position: fixed;
+  top: 10%;
+  left: -10%;
+  width: 150px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(56, 189, 248, 1), rgba(255, 255, 255, 0));
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+  transform: rotate(25deg);
+  animation: shootingStar 8s ease-in infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.va-shooting-star:nth-child(2) {
+  top: 40%;
+  animation-delay: 4.5s;
+  animation-duration: 12s;
+}
+
+@keyframes shootingStar {
+  0% {
+    transform: rotate(25deg) translateX(0);
+    opacity: 1;
+  }
+  20% {
+    transform: rotate(25deg) translateX(120vw);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(25deg) translateX(120vw);
+    opacity: 0;
+  }
+}
+
+/* Moving Starfield */
+.va-stars {
+  position: fixed;
+  inset: -50px;
+  background-image:
+    radial-gradient(1.5px 1.5px at 15% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(2px 2px at 30% 65%, rgba(255, 255, 255, 0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 15%, rgba(255, 255, 255, 0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 85%, rgba(168, 85, 247, 0.45) 0%, transparent 100%),
+    radial-gradient(2px 2px at 85% 35%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 95% 60%, rgba(56, 189, 248, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 90%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 20% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 55%, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+  background-size: 150% 150%;
+  animation: slowPan 40s linear infinite, twinkle 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes slowPan {
+  0% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-30px) translateX(-20px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.5; }
+  100% { opacity: 0.9; }
+}
+
+/* =============================================
+   GLASS CARD  (assistant image container)
+   ============================================= */
+.va-glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 0 40px rgba(56, 100, 255, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.va-glass:hover {
+  box-shadow:
+    0 0 60px rgba(56, 100, 255, 0.28),
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.va-card {
+  width: 260px;
+  max-width: 80vw;
+  height: 340px;
+  max-height: 40vh; /* Don't take too much vertical space on mobile */
+  flex-shrink: 0;
+  border-radius: 2.5rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 0 40px rgba(56, 100, 255, 0.15),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+.va-card:hover {
+  box-shadow:
+    0 0 60px rgba(56, 100, 255, 0.28),
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px) scale(1.01);
+}
+
+/* =============================================
+   PULSE RING  (listening indicator)
+   ============================================= */
+.va-pulse-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.va-pulse-ring::before,
+.va-pulse-ring::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  animation: pulseRing 2s ease-out infinite;
+  border: 2px solid rgba(34, 211, 238, 0.6);
+}
+
+.va-pulse-ring::before {
+  width: 52px;
+  height: 52px;
+  animation-delay: 0s;
+}
+
+.va-pulse-ring::after {
+  width: 68px;
+  height: 68px;
+  animation-delay: 0.5s;
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* =============================================
+   LIVE TEXT BUBBLE
+   ============================================= */
+/* =============================================
+   CHAT CONTAINER
+   ============================================= */
+.va-chat-container {
+  width: 100%;
+  max-width: 600px;
+  /* max-height removed to allow full screen scroll */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 20px;
+  z-index: 40;
+}
+
+.va-chat-container::-webkit-scrollbar {
+  display: none;
+}
+
+.va-bubble {
+  max-width: 85%;
+  flex-shrink: 0; /* Bubbles should not shrink within their container */
+  padding: 14px 22px;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f1f5f9;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-align: left;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================
+   INPUT BAR
+   ============================================= */
+.va-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 500px;
+  max-width: 90%; /* Scale down on smaller screens */
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.va-input-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.va-input-bar input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.va-send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+}
+
+.va-send-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.7);
+}
+
+.va-send-btn:active {
+  transform: scale(0.95);
+}
+
+/* =============================================
+   MIC BUTTON — Premium Glowing Orb
+   ============================================= */
+
+/* Wrapper sits inside the input bar */
+.va-mic-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+/* Rotating conic ring */
+.va-mic-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+      #6366f1, #3b82f6, #06b6d4, #a855f7, #6366f1);
+  animation: spinRing 3s linear infinite;
+  z-index: 0;
+}
+
+/* Soften the ring with a blur layer */
+.va-mic-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+      rgba(99, 102, 241, 0.4), rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.4), rgba(99, 102, 241, 0.4));
+  filter: blur(10px);
+  animation: spinRing 3s linear infinite;
+  z-index: 0;
+}
+
+@keyframes spinRing {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The actual button */
+.va-mic-btn {
+  position: relative;
+  z-index: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+  background: rgba(8, 14, 44, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.va-mic-btn:hover {
+  transform: scale(1.08);
+}
+
+.va-mic-btn:active {
+  transform: scale(0.94);
+}
+
+/* Idle — blue breathing glow */
+.va-mic-btn.idle {
+  box-shadow:
+    0 0 0 2px rgba(99, 102, 241, 0.3),
+    0 0 20px rgba(59, 130, 246, 0.4),
+    0 0 50px rgba(99, 102, 241, 0.15),
+    inset 0 0 20px rgba(59, 130, 246, 0.08);
+  animation: idleBreathe 3s ease-in-out infinite;
+}
+
+@keyframes idleBreathe {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(99, 102, 241, 0.3),
+      0 0 20px rgba(59, 130, 246, 0.4),
+      0 0 50px rgba(99, 102, 241, 0.15),
+      inset 0 0 20px rgba(59, 130, 246, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(99, 102, 241, 0.5),
+      0 0 35px rgba(59, 130, 246, 0.6),
+      0 0 80px rgba(99, 102, 241, 0.25),
+      inset 0 0 30px rgba(59, 130, 246, 0.15);
+  }
+}
+
+/* Listening — red/orange intense pulse */
+.va-mic-btn.listening {
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.5),
+    0 0 25px rgba(239, 68, 68, 0.7),
+    0 0 60px rgba(249, 115, 22, 0.3),
+    inset 0 0 20px rgba(239, 68, 68, 0.15);
+  animation: listenPulse 0.9s ease-in-out infinite;
+}
+
+/* Ring changes colour when listening */
+.va-mic-wrapper.listening::before {
+  background: conic-gradient(from 0deg,
+      #ef4444, #f97316, #fbbf24, #ef4444);
+  animation: spinRing 1.2s linear infinite;
+}
+
+.va-mic-wrapper.listening::after {
+  background: conic-gradient(from 0deg,
+      rgba(239, 68, 68, 0.5), rgba(249, 115, 22, 0.4), rgba(239, 68, 68, 0.5));
+  animation: spinRing 1.2s linear infinite;
+}
+
+@keyframes listenPulse {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(239, 68, 68, 0.5),
+      0 0 25px rgba(239, 68, 68, 0.7),
+      0 0 60px rgba(249, 115, 22, 0.3),
+      inset 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(239, 68, 68, 0.3),
+      0 0 50px rgba(239, 68, 68, 1),
+      0 0 100px rgba(249, 115, 22, 0.5),
+      inset 0 0 40px rgba(239, 68, 68, 0.25);
+  }
+}
+
+/* Mic icon size */
+.va-mic-btn svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+/* =============================================
+   SIDEBAR (mobile menu)
+   ============================================= */
+.va-sidebar {
+  background: rgba(2, 8, 24, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =============================================
+   DESKTOP BUTTONS
+   ============================================= */
+.va-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-radius: 999px;
+  padding: 0 24px;
+  height: 48px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.va-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+/* =============================================
+   ASSISTANT NAME BADGE
+   ============================================= */
+.va-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, #a5b4fc, #818cf8, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =============================================
+   STATUS DOT
+   ============================================= */
+.va-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #67e8f9;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.va-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22d3ee;
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* =============================================
+   CUSTOM SCROLLBAR
+   ============================================= */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.45);
+}
+
+/* Firefox support */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.25) transparent;
+}
