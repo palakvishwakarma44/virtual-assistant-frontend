@@ -1466,38 +1466,36 @@ function Home() {
     };
 
     recognition.onend = () => {
-      isRecognizingRef.current = false;
-      setListening(false);
+  isRecognizingRef.current = false;
+  setListening(false);
 
-      if (isMounted && !isSpeakingRef.current) {
-        setTimeout(() => {
-          try {
-            recognition.start();
-            console.log("Recognition restarted");
-          } catch (e) {
-            if (e.name !== "InvalidStateError") console.error(e);
-          }
-        }, 1000);
+  // ✅ only restart if user wants continuous listening
+  if (isMounted && !isSpeakingRef.current && conversationActiveRef.current) {
+    setTimeout(() => {
+      try {
+        recognition.start();
+        console.log("Recognition restarted safely");
+      } catch (e) {
+        if (e.name !== "InvalidStateError") console.error(e);
       }
-    };
+    }, 1000);
+  }
+};
 
-    recognition.onerror = (event) => {
-      console.warn("Recognition error:", event.error);
+   recognition.onerror = (event) => {
+  console.warn("Recognition error:", event.error);
 
-      isRecognizingRef.current = false;
-      setListening(false);
+  isRecognizingRef.current = false;
+  setListening(false);
 
-      if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
-        setTimeout(() => {
-          try {
-            recognition.start();
-            console.log("Recognition restarted after error");
-          } catch (e) {
-            if (e.name !== "InvalidStateError") console.error(e);
-          }
-        }, 1000);
-      }
-    };
+  if (event.error === "not-allowed") {
+    alert("🎤 Please allow microphone access");
+  }
+
+  if (event.error === "network") {
+    console.log("⚠️ Network issue, not restarting automatically");
+  }
+};
 
     recognition.onresult = async (e) => {
       const transcript = e.results[e.results.length - 1][0].transcript.trim();
