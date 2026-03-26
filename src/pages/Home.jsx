@@ -818,6 +818,8 @@ function Home() {
 
   // NEW: typed input state
   const [typedMessage, setTypedMessage] = useState("");
+  // Pending URL to open (shown as button to bypass popup blocker)
+  const [pendingUrl, setPendingUrl] = useState(null);
 
   // ADVANCED ML FEATURES STATES
   const [generatedImgUrl, setGeneratedImgUrl] = useState(null);
@@ -834,6 +836,13 @@ function Home() {
     const savedMoods = JSON.parse(localStorage.getItem("virtual_assistant_moods") || "[]");
     setMoods(savedMoods);
   }, []);
+
+  // Real-time Audio Level for visual feedback
+  const [audioLevel, setAudioLevel] = useState(0);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const dataArrayRef = useRef(null);
+  const streamRef = useRef(null);
   const [pdfFile, setPdfFile] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -904,26 +913,55 @@ function Home() {
 
 
   // ---------------------------------------------
+  // START AUDIO VISUALIZER (MEDIASTREAM)
+  // ---------------------------------------------
+  const initAudioVisualizer = async () => {
+    if (audioContextRef.current) return; // already initialized
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyserRef.current = analyser;
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      const bufferLength = analyser.frequencyBinCount;
+      dataArrayRef.current = new Uint8Array(bufferLength);
+
+      const trackLevel = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+        const sum = dataArrayRef.current.reduce((a, b) => a + b, 0);
+        const avg = sum / bufferLength;
+        setAudioLevel(avg);
+        requestAnimationFrame(trackLevel);
+      };
+      trackLevel();
+      console.log("Audio visualizer active.");
+    } catch (e) {
+      console.warn("Could not start audio visualizer:", e);
+    }
+  };
+
+  // ---------------------------------------------
   // START SPEECH RECOGNITION
   // ---------------------------------------------
   const startRecognition = () => {
+    initAudioVisualizer(); // ensure audio context is on
     if (!isSpeakingRef.current) {
       try {
         window.speechSynthesis.cancel(); 
-        // Force stop if it were previously stuck
         if (isRecognizingRef.current) {
            recognitionRef.current?.stop();
         }
-        
-        // Wait a tiny bit for cleanup then start
         setTimeout(() => {
            recognitionRef.current?.start();
            console.log("Recognition requested to start");
-        }, 100);
+        }, 150);
       } catch (error) {
-        if (error.name !== "InvalidStateError") {
-          console.error("Start error:", error);
-        }
+        if (error.name !== "InvalidStateError") console.error("Start error:", error);
       }
     }
   }
@@ -943,11 +981,12 @@ function Home() {
       'aapka', 'mujhe', 'aur', 'bhi', 'hi', 'karo', 'karna', 'bana', 'batao',
       'main', 'hum', 'ap', 'tum', 'yeh', 'woh', 'kar', 'ek', 'sab', 'bahut',
       'accha', 'theek', 'haan', 'bolna', 'sunna', 'dekho', 'bilkul', 'zaroor',
-      'kab', 'kahan', 'kitna', 'chahiye', 'milta', 'nahi', 'raha', 'rahi', 'ho',
-      'gaya', 'gayi', 'aata', 'ata'];
+      'kab', 'kahan', 'kitna', 'chahiye', 'milta', 'raha', 'rahi', 'ho',
+      'gaya', 'gayi', 'aata', 'ata', 'bolo', 'sun', 'batana', 'karne', 'karta'];
     const words = text.toLowerCase().split(/\s+/);
     const hinglishCount = words.filter(w => hinglishWords.includes(w)).length;
-    if (hinglishCount >= 1) return 'hi-IN';  // Even 1 Hinglish word means Hindi mode
+    // Require at least 2 keywords to avoid false hi-IN detection
+    if (hinglishCount >= 2) return 'hi-IN';
     return 'en-US';
   };
 
@@ -963,13 +1002,19 @@ function Home() {
     window.utterances.push(utterence);
 
     // Use explicitly passed language, or detect from AI response as fallback
-    const lang = inputLang || detectLang(text);
+    let lang = inputLang || detectLang(text);
+    
+    // If text is purely Roman script but detected as Hindi, treat it as Hinglish (en-IN)
+    // English-Indian voices often sound more natural for Romanized Hinglish than pure Hindi voices.
+    const isRoman = !/[^\x00-\x7F]/.test(text);
+    if (lang === 'hi-IN' && isRoman) lang = 'en-IN';
+    
     utterence.lang = lang;
 
     const voices = window.speechSynthesis.getVoices();
 
     if (lang === 'hi-IN') {
-      // Best Hindi voices
+      // Best Hindi voices (for Devanagari text)
       const hindiVoice = voices.find(v => v.lang === 'hi-IN')
         || voices.find(v => v.name.includes('Hindi'))
         || voices.find(v => v.lang.startsWith('hi'));
@@ -978,6 +1023,13 @@ function Home() {
     } else if (lang === 'ur-PK') {
       const urduVoice = voices.find(v => v.lang === 'ur-PK' || v.lang.startsWith('ur'));
       if (urduVoice) utterence.voice = urduVoice;
+    } else if (lang === 'en-IN') {
+      // Best Indian English voices for Hinglish
+      const indianVoice = voices.find(v => v.lang === 'en-IN')
+        || voices.find(v => v.name.includes('India'))
+        || voices.find(v => v.name.includes('Google India'));
+      if (indianVoice) utterence.voice = indianVoice;
+      utterence.rate = 1.0;
     } else {
       // Priority list for clear, high-quality English voices on Windows/Chrome
       const premiumEnglishVoices = [
@@ -1003,11 +1055,24 @@ function Home() {
       utterence.rate = 1.0;
     }
 
-    isSpeakingRef.current = true
+    // Safety: Reset isSpeakingRef if it gets stuck for too long (e.g. 15s)
+    const safetyTimeout = setTimeout(() => {
+      if (isSpeakingRef.current) {
+        console.warn("Speech synthesis safety timeout triggered");
+        isSpeakingRef.current = false;
+        startRecognition();
+      }
+    }, 15000);
+
+    utterence.onstart = () => {
+      isSpeakingRef.current = true;
+      console.log("Assistant started speaking...");
+    };
 
     utterence.onend = () => {
-      // setAiText(""); // Do not clear AI text so it stays on screen
+      clearTimeout(safetyTimeout);
       isSpeakingRef.current = false;
+      console.log("Assistant finished speaking.");
       
       // Cleanup global reference
       if (window.utterances) {
@@ -1016,10 +1081,11 @@ function Home() {
 
       setTimeout(() => {
         startRecognition();
-      }, 800);
+      }, 500);
     };
 
     utterence.onerror = (e) => {
+      clearTimeout(safetyTimeout);
       console.error("SpeechSynthesisUtterance error:", e);
       isSpeakingRef.current = false;
       if (window.utterances) {
@@ -1027,11 +1093,17 @@ function Home() {
       }
       setTimeout(() => {
         startRecognition();
-      }, 800);
+      }, 500);
     };
 
-    synth.cancel();
-    synth.speak(utterence);
+    try {
+      synth.cancel();
+      synth.speak(utterence);
+    } catch (err) {
+      console.error("Synth.speak failed:", err);
+      isSpeakingRef.current = false;
+      clearTimeout(safetyTimeout);
+    }
   }
 
 
@@ -1142,50 +1214,53 @@ function Home() {
        setAiText(response);
     }
 
+    // Helper: open URL without popup blocker (anchor click method)
+    const openUrl = (url) => {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+
     if (type === 'google-search') {
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(userInput)}`, '_blank');
+      openUrl(`https://www.google.com/search?q=${encodeURIComponent(userInput)}`);
     }
 
     if (type === 'calculator-open') {
-      window.open(`https://www.google.com/search?q=calculator`, '_blank');
+      openUrl(`https://www.google.com/search?q=calculator`);
     }
 
     if (type === 'instagram-open') {
-      window.open(`https://www.instagram.com/`, '_blank');
+      openUrl(`https://www.instagram.com/`);
     }
 
     if (type === 'facebook-open') {
-      window.open(`https://www.facebook.com/`, '_blank');
+      openUrl(`https://www.facebook.com/`);
     }
 
-    if (type === "weather-show") {
-      window.open(`https://www.google.com/search?q=weather`, '_blank');
+    if (type === 'weather-show') {
+      openUrl(`https://www.google.com/search?q=weather`);
     }
 
     if (type === 'youtube-search' || type === 'youtube-play') {
-      window.open(
-        `https://www.youtube.com/results?search_query=${encodeURIComponent(userInput)}`,
-        '_blank'
-      );
+      openUrl(`https://www.youtube.com/results?search_query=${encodeURIComponent(userInput)}`);
     }
 
     if (type === 'open-website') {
-      const target = data?.actionTarget || userInput.replace('open ', '').trim();
+      const target = data?.actionTarget || userInput.replace(/^open\s+/i, '').trim();
       if (target) {
-        // Simple heuristic: if it doesn't have a dot, assume .com
         const url = target.includes('.') ? `https://${target}` : `https://www.${target}.com`;
-        window.open(url, '_blank');
+        openUrl(url);
       }
     }
 
     if (type === 'play-song') {
-      const target = data?.actionTarget || userInput.replace('play ', '').trim();
+      const target = data?.actionTarget || userInput.replace(/^play\s+/i, '').trim();
       if (target) {
-        // Open YouTube music search or general YouTube search for the song
-        window.open(
-          `https://music.youtube.com/search?q=${encodeURIComponent(target)}`,
-          '_blank'
-        );
+        openUrl(`https://music.youtube.com/search?q=${encodeURIComponent(target)}`);
       }
     }
 
@@ -1435,14 +1510,24 @@ function Home() {
 
 
   // ---------------------------------------------
+  // ---------------------------------------------
   // USE EFFECT - SPEECH RECOGNITION ENGINE
   // ---------------------------------------------
+  const userDataRef = useRef(userData);
+  useEffect(() => {
+    userDataRef.current = userData;
+  }, [userData]);
+
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.error("Speech Recognition not supported in this browser.");
+      return;
+    }
     const recognition = new SpeechRecognition();
 
     recognition.continuous = true;
-    recognition.lang = 'en-IN'; // Changed to en-IN for better Indian accent and Hinglish support
+    recognition.lang = 'en-IN'; // English India — accepts English and Hinglish voice input
     recognition.interimResults = false;
 
     recognitionRef.current = recognition;
@@ -1463,98 +1548,139 @@ function Home() {
     recognition.onstart = () => {
       isRecognizingRef.current = true;
       setListening(true);
+      console.log("Recognition started successfully");
     };
 
     recognition.onend = () => {
-  isRecognizingRef.current = false;
-  setListening(false);
+      isRecognizingRef.current = false;
+      setListening(false);
+      console.log("Recognition ended");
 
-  // ✅ only restart if user wants continuous listening
-  if (isMounted && !isSpeakingRef.current && conversationActiveRef.current) {
-    setTimeout(() => {
-      try {
-        recognition.start();
-        console.log("Recognition restarted safely");
-      } catch (e) {
-        if (e.name !== "InvalidStateError") console.error(e);
-      }
-    }, 1000);
-  }
-};
-
-   recognition.onerror = (event) => {
-  console.warn("Recognition error:", event.error);
-
-  isRecognizingRef.current = false;
-  setListening(false);
-
-  if (event.error === "not-allowed") {
-    alert("🎤 Please allow microphone access");
-  }
-
-  if (event.error === "network") {
-    console.log("⚠️ Network issue, not restarting automatically");
-  }
-};
-
-    recognition.onresult = async (e) => {
-      const transcript = e.results[e.results.length - 1][0].transcript.trim();
-      const assistantName = userData?.assistantName?.toLowerCase() || "";
-      const lowerTranscript = transcript.toLowerCase();
-
-      // Check if transcript starts with assistant name or contains it (with phonetic fallbacks for internal model)
-      const hasWakeWord = !assistantName 
-        || lowerTranscript.includes(assistantName)
-        || conversationActiveRef.current // If we just talked, no need for name
-        || transcript.split(' ').length > 3 // If they say a long sentence, they are likely talking to the AI
-        || (assistantName.includes('mia') && (lowerTranscript.includes('miya') || lowerTranscript.includes('maya') || lowerTranscript.includes('miah') || lowerTranscript.includes('me a')));
-
-      if (hasWakeWord) {
-        setAiText("");
-        setUserText(transcript);
-
-        recognition.stop();
-        isRecognizingRef.current = false;
-        setListening(false);
-
-        const userLang = detectLang(transcript);
-        const data = await getGeminiResponse(transcript, null, userLang);
-        console.log("Gemini response data:", data);
-
-        if (data && data.response) {
-          handleCommand(data);
-          setAiText(data.response);
-          speak(data.response);
-
-          // Keep active for follow-ups
-          conversationActiveRef.current = true;
-          if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
-          activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
-        } else {
-          const errorMsg = "I'm sorry, I'm having trouble thinking right now. Please check if your API key is valid.";
-          setAiText(errorMsg);
-          speak(errorMsg);
-        }
-
-        // setUserText(""); // Do not clear User text so it stays on screen
-      } else {
-        console.log("Wake word not detected in:", transcript);
+      // ALWAYS restart as long as assistant is not speaking and component is mounted
+      // (The conversationActiveRef check was preventing wake-word listening)
+      if (isMounted && !isSpeakingRef.current) {
+        setTimeout(() => {
+          try {
+            if (!isRecognizingRef.current && !isSpeakingRef.current) {
+              recognition.start();
+              console.log("Recognition restarted safely");
+            }
+          } catch (e) {
+            if (e.name !== "InvalidStateError") console.error("Auto-restart error:", e);
+          }
+        }, 800);
       }
     };
 
-    // First greeting
-    setTimeout(() => {
-      speak(`Hello ${userData.name}, what can I help you with?`, 'hi-IN');
-    }, 500);
+    recognition.onerror = (event) => {
+      console.warn("Recognition error:", event.error);
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      if (event.error === "not-allowed") {
+        alert("🎤 Microphone access is blocked. Please allow it in browser settings.");
+      }
+
+      // Resume after common recoverable errors like 'no-speech'
+      if (isMounted && !isSpeakingRef.current && event.error !== "not-allowed") {
+        setTimeout(() => {
+          try {
+            if (!isRecognizingRef.current && !isSpeakingRef.current) {
+              recognition.start();
+              console.log("Recognition resumed after error:", event.error);
+            }
+          } catch (e) {
+            if (e.name !== "InvalidStateError") console.error("Error recovery restart failed:", e);
+          }
+        }, 800);
+      }
+    };
+
+    // Diagnostic status exposure
+    window.assistantStatus = {
+      get isSpeaking() { return isSpeakingRef.current },
+      get isRecognizing() { return isRecognizingRef.current },
+      get listening() { return listening }
+    };
+
+    recognition.onresult = async (e) => {
+      const transcript = e.results[e.results.length - 1][0].transcript.trim();
+
+      console.log("Heard transcript:", transcript);
+
+      // Process EVERY voice input — no wake word needed
+      setAiText("");
+      setUserText(transcript);
+
+      recognition.stop();
+      isRecognizingRef.current = false;
+      setListening(false);
+
+      // Open blank tab NOW (synchronous user gesture) before any async call
+      // This is the only reliable way to bypass Chrome's popup blocker for voice commands
+      let preTab = null;
+      try { preTab = window.open('about:blank', '_blank'); } catch(e) {}
+
+      const userLang = detectLang(transcript);
+      const data = await getGeminiResponse(transcript, null, userLang);
+
+      if (data && data.response) {
+        const urlTypes = ['google-search','youtube-search','youtube-play','instagram-open','facebook-open','weather-show','open-website','play-song','calculator-open'];
+        if (urlTypes.includes(data.type)) {
+          let destUrl = null;
+          if (data.type === 'google-search') destUrl = `https://www.google.com/search?q=${encodeURIComponent(data.userInput)}`;
+          else if (data.type === 'youtube-search' || data.type === 'youtube-play') destUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(data.userInput)}`;
+          else if (data.type === 'instagram-open') destUrl = 'https://www.instagram.com/';
+          else if (data.type === 'facebook-open') destUrl = 'https://www.facebook.com/';
+          else if (data.type === 'weather-show') destUrl = 'https://www.google.com/search?q=weather';
+          else if (data.type === 'calculator-open') destUrl = 'https://www.google.com/search?q=calculator';
+          else if (data.type === 'play-song') destUrl = `https://music.youtube.com/search?q=${encodeURIComponent(data.actionTarget || data.userInput)}`;
+          else if (data.type === 'open-website') {
+            const t = data.actionTarget || data.userInput.replace(/^open\s+/i, '').trim();
+            destUrl = t.includes('.') ? `https://${t}` : `https://www.${t}.com`;
+          }
+          // Try pre-opened tab first; if blocked, store URL for button click
+          let opened = false;
+          if (preTab) { try { preTab.location.href = destUrl; opened = true; } catch(ie) {} }
+          if (!opened && destUrl) setPendingUrl(destUrl);
+          if (preTab && !opened) preTab.close();
+        } else if (preTab) {
+          preTab.close();
+        }
+
+        handleCommand(data);
+        setAiText(data.response);
+        speak(data.response, userLang);
+        conversationActiveRef.current = true;
+        if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
+        activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
+      } else {
+        if (preTab) preTab.close();
+        const errorMsg = "I'm having trouble connecting right now.";
+        setAiText(errorMsg);
+        speak(errorMsg, 'en-US');
+      }
+    };
+
+    // First greeting - wait for user data then greet
+    let greeted = false;
+    const greetingInterval = setInterval(() => {
+      if (userDataRef.current && !greeted) {
+        speak(`Hello ${userDataRef.current.name || 'there'}, what can I help you with?`, 'hi-IN');
+        greeted = true;
+        clearInterval(greetingInterval);
+      }
+    }, 1000);
 
     return () => {
       isMounted = false;
       clearTimeout(startTimeout);
+      clearInterval(greetingInterval);
       recognition.stop();
       setListening(false);
       isRecognizingRef.current = false;
     };
-  }, [userData]);
+  }, []);
 
   // ---------------------------------------------
   // AURORA CANVAS BACKGROUND — WOW Edition
@@ -1798,8 +1924,32 @@ function Home() {
           </div>
         )}
 
-        {/* ── GIF indicator ── */}
-        {!aiText && <img src={userImg} alt="user" className="w-[140px] opacity-90" />}
+        {/* ── GIF indicator (Now Reactive Audio Wave) ── */}
+        {!aiText && (
+          <div className="relative flex items-center justify-center">
+            <img 
+               src={userImg} 
+               alt="user" 
+               className="w-[140px] opacity-90 transition-transform duration-75" 
+               style={{ transform: `scale(${1 + (audioLevel / 400)})` }} 
+            />
+            {/* Real-time Frequency Pulse */}
+            {listening && (
+               <div className="absolute inset-x-0 bottom-[-10px] flex items-center justify-center gap-1.5 h-12 pointer-events-none">
+                 {[...Array(6)].map((_, i) => (
+                   <div 
+                      key={i} 
+                      className="bg-blue-400 w-1.5 rounded-full transition-all duration-75 shadow-[0_0_15px_rgba(96,165,250,0.6)]" 
+                      style={{ 
+                        height: `${Math.max(6, audioLevel * (0.4 + Math.random() * 0.8))}px`,
+                        opacity: 0.5 + (audioLevel / 255)
+                      }} 
+                   />
+                 ))}
+               </div>
+            )}
+          </div>
+        )}
         {aiText && <img src={aiImg} alt="ai" className="w-[140px] opacity-90" />}
 
         {/* ── Live text bubbles ── */}
@@ -1809,6 +1959,21 @@ function Home() {
           )}
           {aiText && (
             <div className="va-bubble !bg-blue-500/20 !border-blue-400/30 !text-white self-start mr-auto text-left">{aiText}</div>
+          )}
+          {/* Pending URL open button — shown when popup was blocked */}
+          {pendingUrl && (
+            <div className="self-center mt-2">
+              <a
+                href={pendingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setPendingUrl(null)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-500/30 border border-blue-400/50 text-blue-200 text-sm font-semibold hover:bg-blue-500/50 transition-all shadow-[0_0_20px_rgba(96,165,250,0.3)] animate-pulse"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Tap to Open
+              </a>
+            </div>
           )}
         </div>
         
