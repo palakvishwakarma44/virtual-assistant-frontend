@@ -2127,7 +2127,6 @@ function Home() {
                     alt="AI Generated"
                     className="w-full h-auto object-contain rounded-xl"
                     style={{ opacity: 0, transition: 'opacity 0.6s ease-out' }}
-                    crossOrigin="anonymous"
                     onLoad={(e) => {
                       e.target.style.opacity = 1;
                       const spinner = document.getElementById('img-spinner');
@@ -2135,7 +2134,10 @@ function Home() {
                     }}
                     onError={(e) => {
                       const spinner = document.getElementById('img-spinner');
-                      if (spinner) spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px;text-align:center">Image load failed. This can happen with very complex prompts. Try a simpler request!</span>';
+                      if (spinner) {
+                        spinner.style.display = 'flex';
+                        spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.5">Image generation timed out or was blocked. <br/> Please try a shorter or different prompt!</span>';
+                      }
                     }}
                   />
                 </div>
