@@ -1544,49 +1544,68 @@ function Home() {
       isRecognizingRef.current = false;
       setListening(false);
 
-      // Open blank tab NOW (synchronous user gesture) before any async call
-      // This is the only reliable way to bypass Chrome's popup blocker for voice commands
+      // 🚀 Intent Detection: Only pre-open if the command likely needs a popup
+      const navIntentKeywords = ['open', 'search', 'play', 'go to', 'youtube', 'google', 'facebook', 'instagram', 'website', 'calculator', 'weather'];
+      const hasNavIntent = navIntentKeywords.some(k => transcript.toLowerCase().includes(k));
+      
       let preTab = null;
-      try { preTab = window.open('about:blank', '_blank'); } catch(e) {}
+      if (hasNavIntent) {
+        try { 
+          preTab = window.open('about:blank', '_blank'); 
+          console.log("Pre-opened blank tab for potential navigation.");
+        } catch(e) { 
+          console.warn("Popup blocked:", e); 
+        }
+      }
 
       const userLang = detectLang(transcript);
-      const data = await getGeminiResponse(transcript, null, userLang);
+      try {
+        const data = await getGeminiResponse(transcript, null, userLang);
+        if (data && data.response) {
+          const urlTypes = ['google-search','youtube-search','youtube-play','instagram-open','facebook-open','weather-show','open-website','play-song','calculator-open'];
+          
+          if (urlTypes.includes(data.type)) {
+            let destUrl = null;
+            if (data.type === 'google-search') destUrl = `https://www.google.com/search?q=${encodeURIComponent(data.userInput)}`;
+            else if (data.type === 'youtube-search' || data.type === 'youtube-play') destUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(data.userInput)}`;
+            else if (data.type === 'instagram-open') destUrl = 'https://www.instagram.com/';
+            else if (data.type === 'facebook-open') destUrl = 'https://www.facebook.com/';
+            else if (data.type === 'weather-show') destUrl = 'https://www.google.com/search?q=weather';
+            else if (data.type === 'calculator-open') destUrl = 'https://www.google.com/search?q=calculator';
+            else if (data.type === 'play-song') destUrl = `https://music.youtube.com/search?q=${encodeURIComponent(data.actionTarget || data.userInput)}`;
+            else if (data.type === 'open-website') {
+              const t = data.actionTarget || data.userInput.replace(/^open\s+/i, '').trim();
+              destUrl = t.includes('.') ? `https://${t}` : `https://www.${t}.com`;
+            }
 
-      if (data && data.response) {
-        const urlTypes = ['google-search','youtube-search','youtube-play','instagram-open','facebook-open','weather-show','open-website','play-song','calculator-open'];
-        if (urlTypes.includes(data.type)) {
-          let destUrl = null;
-          if (data.type === 'google-search') destUrl = `https://www.google.com/search?q=${encodeURIComponent(data.userInput)}`;
-          else if (data.type === 'youtube-search' || data.type === 'youtube-play') destUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(data.userInput)}`;
-          else if (data.type === 'instagram-open') destUrl = 'https://www.instagram.com/';
-          else if (data.type === 'facebook-open') destUrl = 'https://www.facebook.com/';
-          else if (data.type === 'weather-show') destUrl = 'https://www.google.com/search?q=weather';
-          else if (data.type === 'calculator-open') destUrl = 'https://www.google.com/search?q=calculator';
-          else if (data.type === 'play-song') destUrl = `https://music.youtube.com/search?q=${encodeURIComponent(data.actionTarget || data.userInput)}`;
-          else if (data.type === 'open-website') {
-            const t = data.actionTarget || data.userInput.replace(/^open\s+/i, '').trim();
-            destUrl = t.includes('.') ? `https://${t}` : `https://www.${t}.com`;
+            let opened = false;
+            if (preTab) { 
+              try { 
+                preTab.location.href = destUrl; 
+                opened = true; 
+              } catch(ie) {
+                console.warn("Failed to update preTab location:", ie);
+              } 
+            }
+            if (!opened && destUrl) setPendingUrl(destUrl);
+            if (preTab && !opened) preTab.close();
+          } else {
+            // Not a navigation type, close the pre-opened tab if any
+            if (preTab) preTab.close();
           }
-          // Try pre-opened tab first; if blocked, store URL for button click
-          let opened = false;
-          if (preTab) { try { preTab.location.href = destUrl; opened = true; } catch(ie) {} }
-          if (!opened && destUrl) setPendingUrl(destUrl);
-          if (preTab && !opened) preTab.close();
-        } else if (preTab) {
-          preTab.close();
-        }
 
-        handleCommand(data);
-        setAiText(data.response);
-        speak(data.response, userLang);
-        conversationActiveRef.current = true;
-        if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
-        activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
-      } else {
+          handleCommand(data);
+          setAiText(data.response);
+          speak(data.response, userLang);
+          conversationActiveRef.current = true;
+          if (activeTimerRef.current) clearTimeout(activeTimerRef.current);
+          activeTimerRef.current = setTimeout(() => { conversationActiveRef.current = false; }, 30000);
+        } else {
+          if (preTab) preTab.close();
+        }
+      } catch (err) {
         if (preTab) preTab.close();
-        const errorMsg = "I'm having trouble connecting right now.";
-        setAiText(errorMsg);
-        speak(errorMsg, 'en-US');
+        console.error("onresult final error:", err);
       }
     };
 
