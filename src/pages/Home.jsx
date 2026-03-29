@@ -765,6 +765,7 @@ function Home() {
   const [moods, setMoods] = useState([]);
   const [showMoods, setShowMoods] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Load persistence on mount
   useEffect(() => {
@@ -783,7 +784,6 @@ function Home() {
   const [pdfFile, setPdfFile] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [showHistory, setShowHistory] = useState(false); // Toggle for desktop history panel
 
   // ── TODO LIST STATE ──
   const [todos, setTodos] = useState(() => {
@@ -1736,6 +1736,7 @@ function Home() {
           <h2 className="text-white/90 font-semibold text-lg mt-8">Menu</h2>
           <button className="va-btn" onClick={handleLogOut}>Log Out</button>
           <button className="va-btn" onClick={() => navigate("/customize")}>Customize Assistant</button>
+          <button className="va-btn" onClick={() => { setShowHelp(true); setHam(false); }}>❓ How to Use</button>
           <div className="w-full h-px bg-white/10 my-1" />
 
           <div className="flex justify-between items-center mt-2">
@@ -1780,8 +1781,8 @@ function Home() {
         </div>
 
         {/* ── Desktop Buttons (Right Side) ── */}
-        <div className='hidden lg:flex flex-col gap-4 absolute top-[20px] right-[20px] z-[50]'>
-          <div className="flex items-center justify-end gap-3">
+        <div className='hidden lg:flex flex-col gap-2 absolute top-[20px] right-[20px] z-[50]'>
+          <div className="flex items-center justify-end gap-2">
             <button 
               className='w-10 h-10 flex items-center justify-center text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md'
               onClick={() => setShowHelp(true)}
@@ -1790,14 +1791,20 @@ function Home() {
               <span className="font-bold text-lg leading-none">?</span>
             </button>
             <button 
-              className='px-6 h-10 text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md' 
+              className={`px-4 h-10 text-sm text-white font-medium border rounded-full hover:scale-105 transition-all shadow-lg backdrop-blur-md ${showHistory ? 'bg-blue-600/50 border-blue-400/50' : 'bg-white/10 border-white/20 hover:bg-white/20'}`}
+              onClick={() => setShowHistory(prev => !prev)}
+            >
+              {showHistory ? 'Hide History' : 'History'}
+            </button>
+            <button 
+              className='px-4 h-10 text-sm text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md' 
               onClick={handleLogOut}
             >
               Log Out
             </button>
           </div>
           <button 
-            className='px-6 h-10 text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md w-full text-right justify-center' 
+            className='px-4 h-10 text-sm text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md w-full justify-center' 
             onClick={() => navigate("/customize")}
           >
             Customize Assistant
