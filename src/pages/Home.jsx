@@ -1948,7 +1948,7 @@ function Home() {
         <div className="va-input-bar mt-1">
 
           {/* ChatGPT-style attach buttons */}
-          <div className="flex items-center gap-1 text-white/50 ml-1">
+          <div className="flex items-center gap-1 text-white/50 shrink-0">
             <label className="cursor-pointer p-2 rounded-full hover:bg-white/10 hover:text-white transition-all flex items-center justify-center shadow-sm" title="Attach PDF">
               <FiPaperclip size={18} />
               <input type="file" accept="application/pdf" className="hidden" onChange={(e) => setPdfFile(e.target.files[0])} />
