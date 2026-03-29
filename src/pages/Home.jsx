@@ -1060,7 +1060,6 @@ function Home() {
       if (isSpeakingRef.current) {
         console.warn("Speech synthesis safety timeout triggered");
         isSpeakingRef.current = false;
-        startRecognition();
       }
     }, 15000);
 
@@ -1078,10 +1077,6 @@ function Home() {
       if (window.utterances) {
         window.utterances = window.utterances.filter(u => u !== utterence);
       }
-
-      setTimeout(() => {
-        startRecognition();
-      }, 500);
     };
 
     utterence.onerror = (e) => {
@@ -1091,9 +1086,6 @@ function Home() {
       if (window.utterances) {
         window.utterances = window.utterances.filter(u => u !== utterence);
       }
-      setTimeout(() => {
-        startRecognition();
-      }, 500);
     };
 
     try {
@@ -1501,10 +1493,6 @@ function Home() {
     } finally {
       setImageFile(null);
       setPdfFile(null);
-      // Restart recognition so it keeps listening for the next voice command
-      setTimeout(() => {
-        startRecognition();
-      }, 1000);
     }
   };
 
