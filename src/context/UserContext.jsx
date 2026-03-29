@@ -30,14 +30,16 @@ const serverUrl = import.meta.env.VITE_API_URL
       const url = `${serverUrl}/api/user/asktoassistant`;
       console.log(`!!!DEBUG!!! Frontend calling: ${url} with command: ${command}, hasFile: ${!!file}, Lang: ${userLang}`);
       
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       let data;
       if (file) {
         data = new FormData();
         data.append("command", command);
         data.append("image", file);
         data.append("userLang", userLang);
+        data.append("timezone", timezone);
       } else {
-        data = { command, userLang };
+        data = { command, userLang, timezone };
       }
 
       const result = await axios.post(url, data, { 

@@ -886,20 +886,13 @@ function Home() {
   // START SPEECH RECOGNITION
   // ---------------------------------------------
   const startRecognition = () => {
-    initAudioVisualizer(); // ensure audio context is on
-    if (!isSpeakingRef.current) {
-      try {
-        window.speechSynthesis.cancel(); 
-        if (isRecognizingRef.current) {
-           recognitionRef.current?.stop();
-        }
-        setTimeout(() => {
-           recognitionRef.current?.start();
-           console.log("Recognition requested to start");
-        }, 150);
-      } catch (error) {
-        if (error.name !== "InvalidStateError") console.error("Start error:", error);
-      }
+    if (isSpeakingRef.current || isRecognizingRef.current) return;
+    try {
+      window.speechSynthesis.cancel();
+      recognitionRef.current?.start();
+      console.log("Recognition requested to start");
+    } catch (error) {
+      if (error.name !== "InvalidStateError") console.error("Start error:", error);
     }
   }
 
@@ -1451,9 +1444,10 @@ function Home() {
     }
     const recognition = new SpeechRecognition();
 
-    recognition.continuous = true;
+    recognition.continuous = false;  // one-shot: more reliable, no network loop
     recognition.lang = 'en-IN'; // English India — accepts English and Hinglish voice input
     recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
 
     recognitionRef.current = recognition;
 
@@ -1478,6 +1472,12 @@ function Home() {
 
       if (event.error === "not-allowed") {
         alert("🎤 Microphone access is blocked. Please allow it in browser settings.");
+      } else if (event.error === "network") {
+        // Network errors are transient — show a hint but do NOT auto-restart
+        setAiText("Mic error: Check your internet or speak again.");
+        console.warn("Network error — tap mic again to retry.");
+      } else if (event.error === "no-speech") {
+        setAiText(""); // silent if no speech detected
       }
     };
 
