@@ -33,9 +33,9 @@ function SignUp() {
     }
   }
   return (
-    <div className='w-full h-[100vh] bg-cover flex justify-center items-center' style={{ backgroundImage: `url(${bg})` }} >
-      <form className='w-[90%] h-[600px] max-w-[500px] bg-black/40 backdrop-blur-xl shadow-2xl shadow-black/50 flex flex-col items-center justify-center gap-[20px] px-[20px] rounded-3xl border border-white/10' onSubmit={handleSignUp}>
-        <h1 className='text-white text-[30px] font-semibold mb-[30px]'>Register to <span className='text-blue-400'>Virtual Assistant</span></h1>
+    <div className='w-full h-[100vh] bg-cover flex justify-center items-center overflow-auto py-8' style={{ backgroundImage: `url(${bg})` }} >
+      <form className='w-[90%] min-h-[500px] py-[40px] max-w-[450px] bg-black/40 backdrop-blur-xl shadow-2xl shadow-black/50 flex flex-col items-center justify-center gap-[20px] px-[20px] rounded-3xl border border-white/10' onSubmit={handleSignUp}>
+        <h1 className='text-white text-[24px] sm:text-[30px] font-semibold mb-[20px] sm:mb-[30px] text-center'>Register to <span className='text-blue-400'>Virtual Assistant</span></h1>
         <input type="text" placeholder='Enter your Name' className='w-full h-[60px] outline-none border-2 border-white bg-transparent  text-white placeholder-gray-300 px-[20px] py-[10px] rounded-full text-[18px]' required onChange={(e) => setName(e.target.value)} value={name} />
         <input type="email" placeholder='Email' className='w-full h-[60px] outline-none border-2 border-white bg-transparent  text-white placeholder-gray-300 px-[20px] py-[10px] rounded-full text-[18px]' required onChange={(e) => setEmail(e.target.value)} value={email} />
         <div className='w-full h-[60px] border-2 border-white bg-transparent  text-white rounded-full text-[18px] relative'>

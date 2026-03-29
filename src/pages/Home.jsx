@@ -1534,17 +1534,6 @@ function Home() {
 
     let isMounted = true;
 
-    const startTimeout = setTimeout(() => {
-      if (isMounted && !isSpeakingRef.current && !isRecognizingRef.current) {
-        try {
-          recognition.start();
-          console.log("Recognition requested to start");
-        } catch (e) {
-          if (e.name !== "InvalidStateError") console.error(e);
-        }
-      }
-    }, 1000);
-
     recognition.onstart = () => {
       isRecognizingRef.current = true;
       setListening(true);
@@ -1554,22 +1543,7 @@ function Home() {
     recognition.onend = () => {
       isRecognizingRef.current = false;
       setListening(false);
-      console.log("Recognition ended");
-
-      // ALWAYS restart as long as assistant is not speaking and component is mounted
-      // (The conversationActiveRef check was preventing wake-word listening)
-      if (isMounted && !isSpeakingRef.current) {
-        setTimeout(() => {
-          try {
-            if (!isRecognizingRef.current && !isSpeakingRef.current) {
-              recognition.start();
-              console.log("Recognition restarted safely");
-            }
-          } catch (e) {
-            if (e.name !== "InvalidStateError") console.error("Auto-restart error:", e);
-          }
-        }, 800);
-      }
+      console.log("Recognition ended (mic turned off gracefully)");
     };
 
     recognition.onerror = (event) => {
@@ -1579,20 +1553,6 @@ function Home() {
 
       if (event.error === "not-allowed") {
         alert("🎤 Microphone access is blocked. Please allow it in browser settings.");
-      }
-
-      // Resume after common recoverable errors like 'no-speech'
-      if (isMounted && !isSpeakingRef.current && event.error !== "not-allowed") {
-        setTimeout(() => {
-          try {
-            if (!isRecognizingRef.current && !isSpeakingRef.current) {
-              recognition.start();
-              console.log("Recognition resumed after error:", event.error);
-            }
-          } catch (e) {
-            if (e.name !== "InvalidStateError") console.error("Error recovery restart failed:", e);
-          }
-        }, 800);
       }
     };
 
@@ -1674,7 +1634,6 @@ function Home() {
 
     return () => {
       isMounted = false;
-      clearTimeout(startTimeout);
       clearInterval(greetingInterval);
       recognition.stop();
       setListening(false);
@@ -1831,7 +1790,7 @@ function Home() {
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }} />
 
       {/* All content sits above canvas — Scrollable container */}
-      <div className="custom-scrollbar" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'column', gap: '15px', overflowY: 'auto', padding: '40px 10px 100px 10px' }}>
+      <div className="custom-scrollbar" style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', flexDirection: 'column', gap: '12px', overflowY: 'auto', padding: 'clamp(48px, 8vw, 60px) clamp(8px, 4vw, 20px) 100px clamp(8px, 4vw, 20px)' }}>
 
    {/* ── Mobile hamburger ── */}
         <CgMenuRight
@@ -1873,7 +1832,7 @@ function Home() {
         </div>
 
         {/* ── Desktop History Panel (Left Side) ── */}
-        <div className={`hidden lg:flex flex-col absolute top-6 left-6 w-[320px] h-[calc(100vh-48px)] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 z-40 shadow-2xl transition-all duration-500 origin-left ${showHistory ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-12 scale-95 pointer-events-none'}`}>
+        <div className={`hidden lg:flex flex-col absolute top-6 left-6 w-[280px] xl:w-[320px] h-[calc(100vh-48px)] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 xl:p-6 z-40 shadow-2xl transition-all duration-500 origin-left ${showHistory ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-12 scale-95 pointer-events-none'}`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-white/80 font-medium tracking-wide">Command History</h3>
             {userData.history?.length > 0 && (
@@ -1895,12 +1854,12 @@ function Home() {
         </div>
 
         {/* ── Desktop Buttons (Right Side) ── */}
-        <div className="hidden lg:flex flex-col gap-3 absolute top-6 right-6 z-40">
-          <button className={`va-btn shadow-xl transition-all ${showHistory ? 'bg-blue-600/40' : 'bg-white/5'}`} onClick={() => setShowHistory(!showHistory)}>
+        <div className="hidden lg:flex flex-col gap-2 absolute top-6 right-4 xl:right-6 z-40">
+          <button className={`va-btn shadow-xl transition-all text-sm xl:text-base ${showHistory ? 'bg-blue-600/40' : 'bg-white/5'}`} onClick={() => setShowHistory(!showHistory)}>
             {showHistory ? "Hide History" : "Show History"}
           </button>
-          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10" onClick={handleLogOut}>Log Out</button>
-          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10" onClick={() => navigate("/customize")}>Customize Assistant</button>
+          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10 text-sm xl:text-base" onClick={handleLogOut}>Log Out</button>
+          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10 text-sm xl:text-base" onClick={() => navigate("/customize")}>Customize</button>
         </div>
 
         {/* ── Assistant Glass Card ── */}
@@ -1930,7 +1889,7 @@ function Home() {
             <img 
                src={userImg} 
                alt="user" 
-               className="w-[140px] opacity-90 transition-transform duration-75" 
+               className="w-[110px] sm:w-[140px] opacity-90 transition-transform duration-75" 
                style={{ transform: `scale(${1 + (audioLevel / 400)})` }} 
             />
             {/* Real-time Frequency Pulse */}
@@ -1950,7 +1909,7 @@ function Home() {
             )}
           </div>
         )}
-        {aiText && <img src={aiImg} alt="ai" className="w-[140px] opacity-90" />}
+        {aiText && <img src={aiImg} alt="ai" className="w-[110px] sm:w-[140px] opacity-90" />}
 
         {/* ── Live text bubbles ── */}
         <div className="va-chat-container" ref={chatContainerRef}>
@@ -1979,7 +1938,7 @@ function Home() {
         
 
         {/* ── FILE PREVIEWS (Show above input bar if attached) ── */}
-        <div className="w-[340px] flex gap-2 mb-[-10px] z-10 px-2 mt-2">
+        <div className="w-[min(500px,92vw)] flex gap-2 mb-[-10px] z-10 px-2 mt-2">
           {pdfFile && (
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-3 py-1.5 flex items-center gap-2 shadow-lg text-xs text-white/90">
               <FiPaperclip className="text-blue-400" size={14} />

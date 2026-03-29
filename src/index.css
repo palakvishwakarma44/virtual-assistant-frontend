@@ -33,7 +33,13 @@ body {
   align-items: center;
   flex-direction: column;
   gap: 12px;
-  padding: 24px 16px; 
+  padding: 16px 12px;
+}
+
+@media (min-width: 640px) {
+  .va-bg {
+    padding: 24px 16px;
+  }
 }
 
 /* Base glowing gradient underlay */
@@ -160,10 +166,10 @@ body {
 }
 
 .va-card {
-  width: 260px;
-  max-width: 80vw;
-  height: 340px;
-  max-height: 40vh; /* Don't take too much vertical space on mobile */
+  width: 220px;
+  max-width: 75vw;
+  height: 290px;
+  max-height: 35vh; /* Don't take too much vertical space on mobile */
   flex-shrink: 0;
   border-radius: 2.5rem;
   overflow: hidden;
@@ -176,6 +182,13 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   transition: box-shadow 0.4s ease, transform 0.4s ease;
+}
+
+@media (min-width: 640px) {
+  .va-card {
+    width: 260px;
+    height: 340px;
+  }
 }
 
 .va-card:hover {
@@ -237,12 +250,12 @@ body {
    ============================================= */
 .va-chat-container {
   width: 100%;
-  max-width: 600px;
+  max-width: min(600px, 92vw);
   /* max-height removed to allow full screen scroll */
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 10px 20px;
+  padding: 10px 16px;
   z-index: 40;
 }
 
@@ -288,8 +301,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 500px;
-  max-width: 90%; /* Scale down on smaller screens */
+  width: min(500px, 92vw);
   padding: 8px 8px 8px 16px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
@@ -301,6 +313,7 @@ body {
 
 .va-input-bar input {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -323,6 +336,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
 }
