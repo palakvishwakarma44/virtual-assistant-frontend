@@ -883,12 +883,17 @@ function Home() {
   };
 
   const stopAudioVisualizer = () => {
+    console.log("Audio visualizer: Aggressive track release initiated.");
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      const tracks = streamRef.current.getTracks();
+      tracks.forEach(track => {
+        track.stop();
+        console.log("Track released:", track.label);
+      });
       streamRef.current = null;
     }
-    if (audioContextRef.current) {
-      audioContextRef.current.close().catch(e => console.warn("Context close error:", e));
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(e => console.warn("Ctx close skip:", e.message));
       audioContextRef.current = null;
     }
     analyserRef.current = null; // Important: stops the trackLevel loop
@@ -2140,10 +2145,26 @@ function Home() {
                     <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
                     <span className="text-white/40 text-xs">Bringing imagination to life…</span>
                   </div>
+                  <div className="flex items-center gap-3 absolute top-3 right-4 z-20">
+                    <a 
+                      href={generatedImgUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      title="Open image in new tab"
+                      className="p-1.5 bg-black/40 hover:bg-black/60 text-white/70 hover:text-white rounded-lg backdrop-blur-md transition-all text-xs flex items-center gap-1.5 border border-white/10"
+                    >
+                      <span className="hidden sm:inline">Open Link</span>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    </a>
+                    <button onClick={() => setGeneratedImgUrl("")} className="text-white/40 hover:text-white transition-colors text-xs font-medium px-1">
+                      Close
+                    </button>
+                  </div>
                   <img
                     src={generatedImgUrl}
                     key={generatedImgUrl}
                     alt="AI Generated"
+                    referrerPolicy="no-referrer"
                     className="w-full h-auto object-contain rounded-xl"
                     style={{ opacity: 0, transition: 'opacity 0.6s ease-out' }}
                     onLoad={(e) => {
@@ -2155,7 +2176,7 @@ function Home() {
                       const spinner = document.getElementById('img-spinner');
                       if (spinner) {
                         spinner.style.display = 'flex';
-                        spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.5">Image generation timed out or was blocked. <br/> Please try a shorter or different prompt!</span>';
+                        spinner.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.6">Image was blocked by browser shields. <br/><span style="color:#06b6d4;cursor:pointer" onclick="window.open(\'' + generatedImgUrl + '\',\'_blank\')">Click here to open directly</span></div>';
                       }
                     }}
                   />
