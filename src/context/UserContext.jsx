@@ -49,7 +49,12 @@ const serverUrl = import.meta.env.VITE_API_URL
       return result.data
     } catch (error) {
       console.error(`!!!DEBUG!!! Frontend error calling ${serverUrl}/api/user/asktoassistant:`, error.message);
-      return null
+      // 🔥 Fallback: Return a valid JSON object instead of null to prevent UI crashes
+      return { 
+        type: "general", 
+        response: "I'm having trouble connecting to the server. Please check your internet or wait for the backend to rebuild.",
+        userInput: command 
+      };
     }
   }
 

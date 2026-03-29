@@ -888,9 +888,10 @@ function Home() {
       streamRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(e => console.warn("Context close error:", e));
       audioContextRef.current = null;
     }
+    analyserRef.current = null; // Important: stops the trackLevel loop
     setAudioLevel(0);
     console.log("Audio visualizer stopped (resources released for Mic)");
   };
@@ -900,16 +901,22 @@ function Home() {
   // ---------------------------------------------
   const startRecognition = () => {
     if (isSpeakingRef.current || isRecognizingRef.current) return;
-    try {
-      // 🧊 STOP Visualizer before starting Recognition to avoid 'network' (Busy) error in Chrome
-      stopAudioVisualizer();
-      
-      window.speechSynthesis.cancel();
-      recognitionRef.current?.start();
-      console.log("Recognition requested to start");
-    } catch (error) {
-      if (error.name !== "InvalidStateError") console.error("Start error:", error);
-    }
+    
+    // 🧊 STOP Visualizer before starting Recognition to avoid 'network' (Busy) error in Chrome
+    stopAudioVisualizer();
+
+    // ⏳ Hardware Release Delay: 
+    // Wait for the OS/Browser to release the Mic source before starting Recognition
+    // Increased to 1200ms for more reliability across different hardware/Brave
+    setTimeout(() => {
+      try {
+        window.speechSynthesis.cancel();
+        recognitionRef.current?.start();
+        console.log("Recognition requested to start after hardware delay (1200ms)");
+      } catch (error) {
+        if (error.name !== "InvalidStateError") console.error("Start error:", error);
+      }
+    }, 1200); 
   }
 
 
@@ -1001,13 +1008,13 @@ function Home() {
       utterence.rate = 1.0;
     }
 
-    // Safety: Reset isSpeakingRef if it gets stuck for too long (e.g. 15s)
+    // Safety: Reset isSpeakingRef if it gets stuck for too long (e.g. 20s)
     const safetyTimeout = setTimeout(() => {
       if (isSpeakingRef.current) {
         console.warn("Speech synthesis safety timeout triggered");
         isSpeakingRef.current = false;
       }
-    }, 15000);
+    }, 20000);
 
     utterence.onstart = () => {
       isSpeakingRef.current = true;
@@ -1027,7 +1034,9 @@ function Home() {
 
     utterence.onerror = (e) => {
       clearTimeout(safetyTimeout);
-      console.error("SpeechSynthesisUtterance error:", e);
+      if (e.error !== 'interrupted') {
+        console.error("SpeechSynthesisUtterance error:", e);
+      }
       isSpeakingRef.current = false;
       if (window.utterances) {
         window.utterances = window.utterances.filter(u => u !== utterence);
@@ -1035,8 +1044,11 @@ function Home() {
     };
 
     try {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.resume(); // Chrome fix for stuck synthesis
+      // 🚀 Only cancel if actually speaking something else to prevent unnecessary interruptions
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+      window.speechSynthesis.resume(); 
       window.speechSynthesis.speak(utterence);
     } catch (err) {
       console.error("Synth.speak failed:", err);
@@ -1495,8 +1507,17 @@ function Home() {
       if (event.error === "not-allowed") {
         alert("🎤 Microphone access is blocked. Please allow it in browser settings.");
       } else if (event.error === "network") {
-        // Network errors are transient — show a hint but do NOT auto-restart
-        setAiText("Mic error: Check your internet or speak again.");
+        // BRAVE BROWSER SPECIAL CHECK: 
+        // If on Brave, 'network' error usually means 'Google Services for Voice' is disabled.
+        navigator.brave?.isBrave().then(isBrave => {
+           if (isBrave) {
+             setAiText("Brave detected: Please enable 'Google Services for Voice' in Brave Settings to use Mic.");
+           } else {
+             setAiText("Mic error: Check your internet or speak again.");
+           }
+        }).catch(() => {
+           setAiText("Mic error: Check your internet or speak again.");
+        });
         console.warn("Network error — tap mic again to retry.");
       } else if (event.error === "no-speech") {
         setAiText(""); // silent if no speech detected
