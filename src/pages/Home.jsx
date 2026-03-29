@@ -1547,24 +1547,26 @@ function Home() {
       }
     };
 
-    // First greeting - wait for user data then greet
-    let greeted = false;
-    const greetingInterval = setInterval(() => {
-      if (userDataRef.current && !greeted) {
-        speak(`Hello ${userDataRef.current.name || 'there'}, what can I help you with?`, 'hi-IN');
-        greeted = true;
-        clearInterval(greetingInterval);
-      }
-    }, 1000);
-
     return () => {
       isMounted = false;
-      clearInterval(greetingInterval);
       recognition.stop();
       setListening(false);
       isRecognizingRef.current = false;
     };
   }, []);
+
+  // ---------------------------------------------
+  // SEPARATE GREETING EFFECT (Runs only once when user data loads)
+  // ---------------------------------------------
+  const greetedRef = useRef(false);
+  useEffect(() => {
+    if (userData && !greetedRef.current) {
+      setTimeout(() => {
+         speak(`Hello ${userData.name || 'there'}, how can I assist you?`, 'hi-IN');
+      }, 1500);
+      greetedRef.current = true;
+    }
+  }, [userData]);
 
   // ---------------------------------------------
   // AURORA CANVAS BACKGROUND — WOW Edition
@@ -2082,7 +2084,7 @@ function Home() {
                     alt="AI Generated"
                     className="w-full h-auto object-contain rounded-xl"
                     style={{ opacity: 0, transition: 'opacity 0.6s ease-out' }}
-                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     onLoad={(e) => {
                       e.target.style.opacity = 1;
                       const spinner = document.getElementById('img-spinner');
@@ -2090,7 +2092,7 @@ function Home() {
                     }}
                     onError={(e) => {
                       const spinner = document.getElementById('img-spinner');
-                      if (spinner) spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px;text-align:center">Could not load the image. Please try again.</span>';
+                      if (spinner) spinner.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:12px;padding:8px;text-align:center">Image load failed. This can happen with very complex prompts. Try a simpler request!</span>';
                     }}
                   />
                 </div>
