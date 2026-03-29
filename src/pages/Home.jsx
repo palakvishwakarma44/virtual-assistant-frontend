@@ -882,12 +882,28 @@ function Home() {
     }
   };
 
+  const stopAudioVisualizer = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    setAudioLevel(0);
+    console.log("Audio visualizer stopped (resources released for Mic)");
+  };
+
   // ---------------------------------------------
   // START SPEECH RECOGNITION
   // ---------------------------------------------
   const startRecognition = () => {
     if (isSpeakingRef.current || isRecognizingRef.current) return;
     try {
+      // 🧊 STOP Visualizer before starting Recognition to avoid 'network' (Busy) error in Chrome
+      stopAudioVisualizer();
+      
       window.speechSynthesis.cancel();
       recognitionRef.current?.start();
       console.log("Recognition requested to start");
@@ -1019,8 +1035,9 @@ function Home() {
     };
 
     try {
-      synth.cancel();
-      synth.speak(utterence);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume(); // Chrome fix for stuck synthesis
+      window.speechSynthesis.speak(utterence);
     } catch (err) {
       console.error("Synth.speak failed:", err);
       isSpeakingRef.current = false;
@@ -1463,6 +1480,11 @@ function Home() {
       isRecognizingRef.current = false;
       setListening(false);
       console.log("Recognition ended (mic turned off gracefully)");
+      
+      // 🎤 RESTART Visualizer after recognition ends so the UI stays alive
+      setTimeout(() => {
+        if (!isRecognizingRef.current) initAudioVisualizer();
+      }, 300);
     };
 
     recognition.onerror = (event) => {
