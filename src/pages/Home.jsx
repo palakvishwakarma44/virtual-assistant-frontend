@@ -731,70 +731,6 @@
 //     <div className='w-full h-[100vh] bg-gradient-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-[15px]'>
 
 //       {/* Mobile menu */}
-//       <CgMenuRight className='lg:hidden text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={() => setHam(true)} />
-
-//       <div className={`absolute lg:hidden top-0 w-full h-full bg-black/60 backdrop-blur-xl border-r border-white/10 p-[20px] flex flex-col gap-[20px] items-start ${ham ? "translate-x-0" : "translate-x-full"} transition-transform duration-300 z-50`}>
-//         <RxCross1 className='text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={() => setHam(false)} />
-
-//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={handleLogOut}>Log Out</button>
-
-//         <button className='min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full cursor-pointer text-[19px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={() => navigate("/customize")}>Customize your Assistant</button>
-
-//         <div className='w-full h-[2px] bg-gray-400'></div>
-//         <h1 className='text-white font-semibold text-[19px]'>History</h1>
-
-//         <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
-//           {userData.history?.map((his, i) => (
-//             <div key={i} className='text-gray-200 text-[18px] w-full h-[30px]'>{his}</div>
-//           ))}
-//         </div>
-//       </div>
-
-
-//       {/* Desktop Buttons */}
-//       <button className='hidden lg:block min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full absolute top-[20px] right-[20px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={handleLogOut}>Log Out</button>
-
-//       <button className='hidden lg:block min-w-[150px] h-[60px] text-black font-semibold bg-white rounded-full absolute top-[100px] right-[20px] hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-white/20' onClick={() => navigate("/customize")}>Customize your Assistant</button>
-
-
-//       {/* AI Image */}
-//       <div className='w-[300px] h-[400px] flex justify-center items-center overflow-hidden rounded-[3rem] shadow-2xl shadow-blue-500/20 border border-white/10'>
-//         <img src={userData?.assistantImage} alt="" className='h-full object-cover' />
-//       </div>
-
-//       <h1 className='text-white text-[18px] font-semibold'>I'm {userData?.assistantName}</h1>
-
-//       {/* USER TYPING + AI SPEAKING IMAGE */}
-//       {!aiText && <img src={userImg} alt="" className='w-[200px]' />}
-//       {aiText && <img src={aiImg} alt="" className='w-[200px]' />}
-
-
-//       {/* LIVE TEXT */}
-//       <h1 className='text-white text-[18px] font-semibold'>{userText ? userText : aiText ? aiText : null}</h1>
-
-
-//       {/* ------------------ NEW TYPE BOX ------------------ */}
-//       <div className='flex items-center gap-3 w-[320px] mt-2'>
-//         <input
-//           type="text"
-//           value={typedMessage}
-//           onChange={(e) => setTypedMessage(e.target.value)}
-//           placeholder="Type your message..."
-//           className='w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white outline-none'
-//         />
-
-//         <button
-//           onClick={handleTypedSend}
-//           className='px-4 py-2 bg-blue-600 rounded-xl text-white font-semibold'
-//         >
-//           Send
-//         </button>
-//       </div>
-
-//     </div>
-//   )
-// }
-
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { userDataContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom'
@@ -828,6 +764,7 @@ function Home() {
   const [expenses, setExpenses] = useState([]);
   const [moods, setMoods] = useState([]);
   const [showMoods, setShowMoods] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Load persistence on mount
   useEffect(() => {
@@ -1467,7 +1404,7 @@ function Home() {
     setTypedMessage("");
 
     try {
-      setAiText("");
+      setAiText("Thinking...");
       const userLang = detectLang(message);
       console.log("!!!DEBUG!!! Sending message:", message, "File:", fileToSend?.name, "Type:", fileToSend?.type);
       const data = await getGeminiResponse(message, fileToSend, userLang);
@@ -1557,8 +1494,8 @@ function Home() {
       console.log("Heard transcript:", transcript);
 
       // Process EVERY voice input — no wake word needed
-      setAiText("");
       setUserText(transcript);
+      setAiText("Thinking...");
 
       recognition.stop();
       isRecognizingRef.current = false;
@@ -1667,14 +1604,14 @@ function Home() {
       });
     };
 
-    // ── Nebula blobs ────────────────────────────
+    // ── Ultra-Premium Nebula blobs ────────────────────────────
     const blobs = [
-      { x: 0.12, y: 0.22, r: 0.50, dx: 0.00022, dy: 0.00015, color: [30, 80, 255], a: 0.28 },
-      { x: 0.78, y: 0.55, r: 0.42, dx: -0.00018, dy: 0.00020, color: [120, 0, 240], a: 0.24 },
-      { x: 0.50, y: 0.80, r: 0.38, dx: 0.00015, dy: -0.00012, color: [0, 180, 255], a: 0.22 },
-      { x: 0.88, y: 0.12, r: 0.30, dx: -0.00020, dy: 0.00018, color: [200, 0, 220], a: 0.20 },
-      { x: 0.28, y: 0.68, r: 0.28, dx: 0.00018, dy: -0.00022, color: [0, 220, 200], a: 0.18 },
-      { x: 0.62, y: 0.35, r: 0.24, dx: -0.00014, dy: -0.00016, color: [80, 60, 255], a: 0.15 },
+      { x: 0.10, y: 0.20, r: 0.60, dx: 0.00020, dy: 0.00015, color: [70, 0, 255], a: 0.35 },    // Deep Indigo
+      { x: 0.85, y: 0.50, r: 0.55, dx: -0.00015, dy: 0.00018, color: [220, 0, 150], a: 0.30 },  // Vibrant Magenta
+      { x: 0.40, y: 0.85, r: 0.50, dx: 0.00018, dy: -0.00012, color: [0, 200, 255], a: 0.35 },  // Bright Cyan
+      { x: 0.90, y: 0.10, r: 0.45, dx: -0.00018, dy: 0.00022, color: [150, 0, 255], a: 0.25 },  // Purple
+      { x: 0.30, y: 0.60, r: 0.40, dx: 0.00016, dy: -0.00020, color: [0, 255, 180], a: 0.20 },  // Teal 
+      { x: 0.60, y: 0.30, r: 0.35, dx: -0.00012, dy: -0.00016, color: [255, 50, 100], a: 0.18 }, // Hot Pink Accent
     ];
 
     // ── Grid ────────────────────────────────────
@@ -1698,8 +1635,8 @@ function Home() {
       const W = canvas.width;
       const H = canvas.height;
 
-      // ── Base ──
-      ctx.fillStyle = '#020818';
+      // ── Premium Deep Base ──
+      ctx.fillStyle = '#050314'; // Deeper starfield base
       ctx.fillRect(0, 0, W, H);
 
       // ── Grid ──
@@ -1773,6 +1710,7 @@ function Home() {
   // RENDER UI — Premium Aesthetic
   // ---------------------------------------------
   return (
+    <React.Fragment>
     <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {/* Aurora Canvas Background */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }} />
@@ -1842,12 +1780,28 @@ function Home() {
         </div>
 
         {/* ── Desktop Buttons (Right Side) ── */}
-        <div className="hidden lg:flex flex-col gap-2 absolute top-6 right-4 xl:right-6 z-40">
-          <button className={`va-btn shadow-xl transition-all text-sm xl:text-base ${showHistory ? 'bg-blue-600/40' : 'bg-white/5'}`} onClick={() => setShowHistory(!showHistory)}>
-            {showHistory ? "Hide History" : "Show History"}
+        <div className='hidden lg:flex flex-col gap-4 absolute top-[20px] right-[20px] z-[50]'>
+          <div className="flex items-center justify-end gap-3">
+            <button 
+              className='w-10 h-10 flex items-center justify-center text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md'
+              onClick={() => setShowHelp(true)}
+              title="How to Use"
+            >
+              <span className="font-bold text-lg leading-none">?</span>
+            </button>
+            <button 
+              className='px-6 h-10 text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md' 
+              onClick={handleLogOut}
+            >
+              Log Out
+            </button>
+          </div>
+          <button 
+            className='px-6 h-10 text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md w-full text-right justify-center' 
+            onClick={() => navigate("/customize")}
+          >
+            Customize Assistant
           </button>
-          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10 text-sm xl:text-base" onClick={handleLogOut}>Log Out</button>
-          <button className="va-btn shadow-xl bg-white/5 hover:bg-white/10 text-sm xl:text-base" onClick={() => navigate("/customize")}>Customize</button>
         </div>
 
         {/* ── Assistant Glass Card ── */}
@@ -2230,8 +2184,104 @@ function Home() {
           </div>
         )}
 
+        {/* --- HELP / HOW TO USE MODAL --- */}
+        {showHelp && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-300">
+            <div className="va-glass w-full max-w-[600px] max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl border border-white/20 bg-black/40 relative">
+              
+              {/* Animated Header */}
+              <div className="p-6 relative overflow-hidden border-b border-white/10 bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-indigo-900/40">
+                <div className="absolute top-[-50px] left-[-50px] w-32 h-32 bg-blue-500/30 rounded-full blur-[40px]"></div>
+                <div className="absolute bottom-[-50px] right-[-50px] w-32 h-32 bg-purple-500/30 rounded-full blur-[40px]"></div>
+                
+                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tabular-nums tracking-wide flex items-center gap-3 relative z-10">
+                  <span className="text-3xl">✨</span> How to Use Assistant
+                </h2>
+                <p className="text-white/60 text-sm mt-1 relative z-10">Try saying or typing these commands</p>
+                <button 
+                  onClick={() => setShowHelp(false)}
+                  className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/25 text-white transition-all z-20"
+                >
+                  <RxCross1 />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+                
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-white font-semibold text-lg flex items-center gap-2 border-b border-white/10 pb-2">
+                    <span className="text-amber-400">🎨</span> Multimedia & Vision
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Generate Artwork</p>
+                      <p className="text-white/90 font-medium">"generate a photo of space"</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Music via YouTube</p>
+                      <p className="text-white/90 font-medium">"play shape of you"</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-white font-semibold text-lg flex items-center gap-2 border-b border-white/10 pb-2">
+                    <span className="text-emerald-400">📝</span> Productivity
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Manage Tasks</p>
+                      <p className="text-white/90 font-medium">"add buy milk to todolist"</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Track Spending</p>
+                      <p className="text-white/90 font-medium">"I spent 500 on lunch"</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Open Apps</p>
+                      <p className="text-white/90 font-medium">"open calculator"</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Summarize Files</p>
+                      <p className="text-white/90 font-medium">"summarize this pdf"</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-white font-semibold text-lg flex items-center gap-2 border-b border-white/10 pb-2">
+                    <span className="text-pink-400">🧠</span> Memory & Chat
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Personalize Assistant</p>
+                      <p className="text-white/90 font-medium">"remember I like pizza"</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 p-3 rounded-xl hover:bg-white/10 transition-colors">
+                      <p className="text-white/40 text-xs mb-1">Daily Planning</p>
+                      <p className="text-white/90 font-medium">"give me my daily briefing"</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+              
+              <div className="p-4 border-t border-white/10 bg-black/20 text-center">
+                <button 
+                  onClick={() => setShowHelp(false)}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-full transition-all shadow-lg hover:shadow-blue-500/25"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
+    </React.Fragment>
   );
 }
 
