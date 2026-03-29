@@ -1582,13 +1582,13 @@ function Home() {
     resize();
     window.addEventListener('resize', resize);
 
-    // ── Stars ──────────────────────────────────
-    const stars = Array.from({ length: 260 }, () => ({
+    // ── Denser Stars with brighter sparkle ────────────────────────────
+    const stars = Array.from({ length: 380 }, () => ({
       x: Math.random(), y: Math.random(),
-      r: Math.random() * 1.4 + 0.3,
-      base: Math.random() * 0.6 + 0.3,
+      r: Math.random() * 1.8 + 0.2,
+      base: Math.random() * 0.8 + 0.2,
       phase: Math.random() * Math.PI * 2,
-      speed: Math.random() * 0.02 + 0.005,
+      speed: Math.random() * 0.025 + 0.006,
     }));
 
     // ── Shooting stars ──────────────────────────
@@ -1604,21 +1604,22 @@ function Home() {
       });
     };
 
-    // ── Ultra-Premium Nebula blobs ────────────────────────────
+    // ── Ultra-Vivid Galaxy Nebula blobs ────────────────────────────
     const blobs = [
-      { x: 0.10, y: 0.20, r: 0.60, dx: 0.00020, dy: 0.00015, color: [70, 0, 255], a: 0.35 },    // Deep Indigo
-      { x: 0.85, y: 0.50, r: 0.55, dx: -0.00015, dy: 0.00018, color: [220, 0, 150], a: 0.30 },  // Vibrant Magenta
-      { x: 0.40, y: 0.85, r: 0.50, dx: 0.00018, dy: -0.00012, color: [0, 200, 255], a: 0.35 },  // Bright Cyan
-      { x: 0.90, y: 0.10, r: 0.45, dx: -0.00018, dy: 0.00022, color: [150, 0, 255], a: 0.25 },  // Purple
-      { x: 0.30, y: 0.60, r: 0.40, dx: 0.00016, dy: -0.00020, color: [0, 255, 180], a: 0.20 },  // Teal 
-      { x: 0.60, y: 0.30, r: 0.35, dx: -0.00012, dy: -0.00016, color: [255, 50, 100], a: 0.18 }, // Hot Pink Accent
+      { x: 0.08, y: 0.15, r: 0.65, dx: 0.00025, dy: 0.00016, color: [100, 0, 255], a: 0.42 },   // Electric Violet
+      { x: 0.88, y: 0.45, r: 0.60, dx: -0.00018, dy: 0.00022, color: [230, 0, 120], a: 0.38 }, // Neon Magenta
+      { x: 0.45, y: 0.88, r: 0.55, dx: 0.00020, dy: -0.00014, color: [0, 210, 255], a: 0.40 }, // Laser Cyan
+      { x: 0.92, y: 0.08, r: 0.48, dx: -0.00022, dy: 0.00025, color: [180, 0, 255], a: 0.32 }, // Deep Purple
+      { x: 0.25, y: 0.65, r: 0.44, dx: 0.00019, dy: -0.00023, color: [0, 255, 160], a: 0.28 }, // Vivid Teal
+      { x: 0.65, y: 0.28, r: 0.40, dx: -0.00015, dy: -0.00018, color: [255, 60, 80], a: 0.25 }, // Fire Pink
+      { x: 0.50, y: 0.50, r: 0.30, dx: 0.00010, dy: 0.00012, color: [80, 140, 255], a: 0.20 }, // Center Blue
     ];
 
-    // ── Grid ────────────────────────────────────
+    // ── Grid (diagonal for premium feel) ────────────────────────────
     const drawGrid = (W, H) => {
-      const size = 60;
-      ctx.strokeStyle = 'rgba(80,120,255,0.04)';
-      ctx.lineWidth = 0.5;
+      const size = 70;
+      ctx.strokeStyle = 'rgba(100,60,255,0.06)';
+      ctx.lineWidth = 0.6;
       for (let gx = 0; gx < W; gx += size) {
         ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
       }
@@ -1635,14 +1636,24 @@ function Home() {
       const W = canvas.width;
       const H = canvas.height;
 
-      // ── Premium Deep Base ──
-      ctx.fillStyle = '#050314'; // Deeper starfield base
+      // ── Rich Deep Space Base ──
+      ctx.fillStyle = '#04020f';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── Diagonal Aurora sweep ──
+      const auroraX = (Math.sin(t * 0.003) * 0.5 + 0.5) * W;
+      const aurora = ctx.createLinearGradient(auroraX - W * 0.4, 0, auroraX + W * 0.4, H);
+      aurora.addColorStop(0, 'rgba(100,0,255,0)');
+      aurora.addColorStop(0.4, 'rgba(100,0,255,0.05)');
+      aurora.addColorStop(0.6, 'rgba(220,0,130,0.05)');
+      aurora.addColorStop(1, 'rgba(0,200,255,0)');
+      ctx.fillStyle = aurora;
       ctx.fillRect(0, 0, W, H);
 
       // ── Grid ──
       drawGrid(W, H);
 
-      // ── Nebula blobs ──
+      // ── Nebula blobs (vivid pulsing glow) ──
       blobs.forEach(b => {
         b.x += b.dx * Math.sin(t * 0.002 + b.r);
         b.y += b.dy * Math.cos(t * 0.0018 + b.r);
@@ -1651,11 +1662,12 @@ function Home() {
         const cx = b.x * W, cy = b.y * H;
         const rad = b.r * Math.min(W, H);
         const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-        const pulse = 0.12 * Math.sin(t * 0.016 + b.r);
+        const pulse = 0.18 * Math.sin(t * 0.014 + b.r); // stronger pulse
         const [r, gr, bl] = b.color;
-        g.addColorStop(0, `rgba(${r},${gr},${bl},${b.a + pulse})`);
-        g.addColorStop(0.45, `rgba(${r},${gr},${bl},${(b.a + pulse) * 0.35})`);
-        g.addColorStop(1, `rgba(${r},${gr},${bl},0)`);
+        g.addColorStop(0,    `rgba(${r},${gr},${bl},${Math.min(0.9, b.a + pulse)})`);
+        g.addColorStop(0.35, `rgba(${r},${gr},${bl},${(b.a + pulse) * 0.5})`);
+        g.addColorStop(0.7,  `rgba(${r},${gr},${bl},${(b.a + pulse) * 0.15})`);
+        g.addColorStop(1,    `rgba(${r},${gr},${bl},0)`);
         ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
         ctx.fillStyle = g; ctx.fill();
       });
@@ -1758,25 +1770,49 @@ function Home() {
           </div>
         </div>
 
-        {/* ── Desktop History Panel (Left Side) ── */}
-        <div className={`hidden lg:flex flex-col absolute top-6 left-6 w-[280px] xl:w-[320px] h-[calc(100vh-48px)] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 xl:p-6 z-40 shadow-2xl transition-all duration-500 origin-left ${showHistory ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-12 scale-95 pointer-events-none'}`}>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-white/80 font-medium tracking-wide">Command History</h3>
-            {userData.history?.length > 0 && (
-              <button className="text-xs text-red-400 hover:text-red-300 transition-colors bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-full" onClick={handleDeleteHistory}>Clear</button>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.1) transparent' }}>
-            {userData.history?.length === 0 ? (
-              <p className="text-white/30 text-sm text-center mt-10">No history yet</p>
-            ) : (
-              userData.history?.map((his, i) => (
-                <div key={i} className="text-white/60 text-sm bg-black/20 p-4 rounded-2xl border border-white/5 hover:bg-white/10 hover:border-white/20 hover:text-white/95 transition-all duration-300 cursor-default leading-relaxed text-left w-full break-words shadow-sm">
-                  {his}
+        {/* ── Desktop History Panel (Left Side) ── Premium Redesign */}
+        <div className={`hidden lg:flex flex-col absolute top-6 left-6 w-[280px] xl:w-[300px] h-[calc(100vh-48px)] z-40 transition-all duration-500 origin-left ${
+          showHistory ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-16 scale-95 pointer-events-none'
+        }`}>
+          {/* Glass card */}
+          <div className="flex flex-col h-full rounded-3xl overflow-hidden shadow-2xl" style={{ background: 'rgba(8,6,30,0.75)', backdropFilter: 'blur(24px)', border: '1px solid rgba(120,80,255,0.25)' }}>
+            
+            {/* Header */}
+            <div className="relative px-5 pt-5 pb-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,rgba(80,0,255,0.18) 0%,rgba(200,0,180,0.12) 100%)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base" style={{ background: 'linear-gradient(135deg,#7c3aed,#db2777)' }}>🕐</div>
+                <div>
+                  <h3 className="text-white font-semibold text-sm tracking-wide">Command History</h3>
+                  <p className="text-white/40 text-[10px] mt-0.5">{userData?.history?.length || 0} commands</p>
                 </div>
-              )).reverse()
-            )}
+              </div>
+              {userData?.history?.length > 0 && (
+                <button 
+                  onClick={handleDeleteHistory}
+                  className="text-[10px] font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-full transition-all border border-red-500/20"
+                >Clear all</button>
+              )}
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,80,255,0.3) transparent' }}>
+              {!userData?.history?.length ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3 opacity-40">
+                  <span className="text-4xl">🎙️</span>
+                  <p className="text-white/60 text-xs text-center">No commands yet.<br/>Start speaking or typing!</p>
+                </div>
+              ) : (
+                [...(userData.history)].reverse().map((his, i) => (
+                  <div key={i} className="group flex items-start gap-3 p-3 rounded-2xl transition-all duration-200 cursor-default" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(120,80,255,0.12)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                  >
+                    <div className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-purple-300 mt-0.5" style={{ background: 'rgba(120,80,255,0.25)' }}>{userData.history.length - i}</div>
+                    <p className="text-white/70 text-xs leading-relaxed break-words group-hover:text-white/95 transition-colors flex-1">{his}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
