@@ -1636,17 +1636,22 @@ function Home() {
       const W = canvas.width;
       const H = canvas.height;
 
-      // ── Rich Deep Space Base ──
-      ctx.fillStyle = '#04020f';
+      // ── Rich deep-space radial base (CSS-quality gradient) ──
+      const baseGrad = ctx.createRadialGradient(W * 0.5, H * 0.4, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.85);
+      baseGrad.addColorStop(0,   '#0d0525'); // deep indigo core
+      baseGrad.addColorStop(0.4, '#08031a'); // near-black
+      baseGrad.addColorStop(1,   '#020010'); // pitch space edge
+      ctx.fillStyle = baseGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // ── Diagonal Aurora sweep ──
+      // ── Diagonal Aurora sweep (slow breathing light) ──
       const auroraX = (Math.sin(t * 0.003) * 0.5 + 0.5) * W;
-      const aurora = ctx.createLinearGradient(auroraX - W * 0.4, 0, auroraX + W * 0.4, H);
-      aurora.addColorStop(0, 'rgba(100,0,255,0)');
-      aurora.addColorStop(0.4, 'rgba(100,0,255,0.05)');
-      aurora.addColorStop(0.6, 'rgba(220,0,130,0.05)');
-      aurora.addColorStop(1, 'rgba(0,200,255,0)');
+      const aurora  = ctx.createLinearGradient(auroraX - W * 0.5, 0, auroraX + W * 0.5, H);
+      aurora.addColorStop(0,   'rgba(90,0,255,0)');
+      aurora.addColorStop(0.35,'rgba(90,0,255,0.07)');
+      aurora.addColorStop(0.55,'rgba(200,0,140,0.07)');
+      aurora.addColorStop(0.75,'rgba(0,180,255,0.05)');
+      aurora.addColorStop(1,   'rgba(0,180,255,0)');
       ctx.fillStyle = aurora;
       ctx.fillRect(0, 0, W, H);
 
@@ -1816,34 +1821,48 @@ function Home() {
           </div>
         </div>
 
-        {/* ── Desktop Buttons (Right Side) ── */}
-        <div className='hidden lg:flex flex-col gap-2 absolute top-[20px] right-[20px] z-[50]'>
-          <div className="flex items-center justify-end gap-2">
-            <button 
-              className='w-10 h-10 flex items-center justify-center text-white bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md'
-              onClick={() => setShowHelp(true)}
-              title="How to Use"
-            >
-              <span className="font-bold text-lg leading-none">?</span>
-            </button>
-            <button 
-              className={`px-4 h-10 text-sm text-white font-medium border rounded-full hover:scale-105 transition-all shadow-lg backdrop-blur-md ${showHistory ? 'bg-blue-600/50 border-blue-400/50' : 'bg-white/10 border-white/20 hover:bg-white/20'}`}
-              onClick={() => setShowHistory(prev => !prev)}
-            >
-              {showHistory ? 'Hide History' : 'History'}
-            </button>
-            <button 
-              className='px-4 h-10 text-sm text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md' 
-              onClick={handleLogOut}
-            >
-              Log Out
-            </button>
-          </div>
+        {/* ── Desktop Buttons — Vertical Stack (Right Side) ── */}
+        <div className='hidden lg:flex flex-col items-end gap-2 absolute top-[20px] right-[20px] z-[50]'>
+          
+          {/* How to Use */}
           <button 
-            className='px-4 h-10 text-sm text-white font-medium bg-white/10 border border-white/20 rounded-full hover:bg-white/20 hover:scale-105 transition-all shadow-lg backdrop-blur-md w-full justify-center' 
-            onClick={() => navigate("/customize")}
+            onClick={() => setShowHelp(true)}
+            title="How to Use"
+            className='flex items-center gap-2 pl-3 pr-4 h-9 text-sm text-white/80 font-medium bg-white/8 border border-white/15 rounded-full hover:bg-purple-500/20 hover:border-purple-400/40 hover:text-white hover:scale-105 transition-all shadow-lg backdrop-blur-md'
           >
-            Customize Assistant
+            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 font-bold text-xs">❓</span>
+            How to Use
+          </button>
+
+          {/* History Toggle */}
+          <button 
+            onClick={() => setShowHistory(prev => !prev)}
+            className={`flex items-center gap-2 pl-3 pr-4 h-9 text-sm font-medium border rounded-full hover:scale-105 transition-all shadow-lg backdrop-blur-md ${
+              showHistory 
+                ? 'text-blue-300 bg-blue-600/30 border-blue-400/50 hover:bg-blue-600/40' 
+                : 'text-white/80 border-white/15 bg-white/8 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span className="text-base">🗓</span>
+            {showHistory ? 'Hide History' : 'History'}
+          </button>
+
+          {/* Log Out */}
+          <button 
+            onClick={handleLogOut}
+            className='flex items-center gap-2 pl-3 pr-4 h-9 text-sm text-white/80 font-medium bg-white/8 border border-white/15 rounded-full hover:bg-red-500/20 hover:border-red-400/40 hover:text-white hover:scale-105 transition-all shadow-lg backdrop-blur-md'
+          >
+            <span className="text-base">🚪</span>
+            Log Out
+          </button>
+
+          {/* Customize */}
+          <button 
+            onClick={() => navigate("/customize")}
+            className='flex items-center gap-2 pl-3 pr-4 h-9 text-sm text-white/80 font-medium bg-white/8 border border-white/15 rounded-full hover:bg-indigo-500/20 hover:border-indigo-400/40 hover:text-white hover:scale-105 transition-all shadow-lg backdrop-blur-md'
+          >
+            <span className="text-base">✨</span>
+            Customize
           </button>
         </div>
 
