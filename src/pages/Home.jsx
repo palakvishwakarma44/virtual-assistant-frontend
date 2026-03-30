@@ -1428,8 +1428,8 @@ function Home() {
                     </button>
                   </div>
                   <img
-                    src={imageBlobUrl || generatedImgUrl}
-                    key={imageBlobUrl || generatedImgUrl}
+                    src={generatedImgUrl}
+                    key={generatedImgUrl}
                     alt="AI Generated"
                     referrerPolicy="no-referrer"
                     className="w-full h-auto object-contain rounded-xl"
@@ -1443,7 +1443,7 @@ function Home() {
                       const spinner = document.getElementById('img-spinner');
                       if (spinner) {
                         spinner.style.display = 'flex';
-                        spinner.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.6">Image was blocked by browser shields. <br/><span style="color:#06b6d4;cursor:pointer" onclick="window.open('${imageBlobUrl || generatedImgUrl}','_blank')">Click here to open directly</span></div>`;
+                        spinner.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.6">Image was blocked by browser shields. <br/><span style="color:#06b6d4;cursor:pointer" onclick="window.open('${generatedImgUrl}','_blank')">Click here to open directly</span></div>`;
                       }
                     }}
                   />
