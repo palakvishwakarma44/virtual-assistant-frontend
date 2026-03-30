@@ -8,13 +8,22 @@
 // import userImg from "../assets/user.gif"
 // function Home() {
 //   //const [, setActivated] = useState(false);
-
+//
 //   const {userData,serverUrl,setUserData,getGeminiResponse}=useContext(userDataContext)
 //   const navigate=useNavigate()
 //   const [listening,setListening]=useState(false)
 //   const [userText,setUserText]=useState("")
 //   const [aiText,setAiText]=useState("")
 //   const isSpeakingRef=useRef(false)
+//   const recognitionRef=useRef(null)
+//
+//
+//   const [ham,setHam]=useState(false)
+//     const [typedMessage, setTypedMessage] = useState("");
+//   const isRecognizingRef=useRef(false)
+//   const synth=window.speechSynthesis
+
+  const isSpeakingRef=useRef(false)
 //   const recognitionRef=useRef(null)
 
 
@@ -116,7 +125,7 @@
 
 //   }
 
-// useEffect(() => {
+  useEffect(() => {
 //   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 //   const recognition = new SpeechRecognition();
 
@@ -2161,8 +2170,8 @@ function Home() {
                     </button>
                   </div>
                   <img
-                    src={generatedImgUrl}
-                    key={generatedImgUrl}
+                    src={imageBlobUrl || generatedImgUrl}
+                    key={imageBlobUrl || generatedImgUrl}
                     alt="AI Generated"
                     referrerPolicy="no-referrer"
                     className="w-full h-auto object-contain rounded-xl"
@@ -2176,7 +2185,7 @@ function Home() {
                       const spinner = document.getElementById('img-spinner');
                       if (spinner) {
                         spinner.style.display = 'flex';
-                        spinner.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.6">Image was blocked by browser shields. <br/><span style="color:#06b6d4;cursor:pointer" onclick="window.open(\'' + generatedImgUrl + '\',\'_blank\')">Click here to open directly</span></div>';
+                        spinner.innerHTML = `<div style="color:rgba(255,255,255,0.4);font-size:12px;padding:12px;text-align:center;line-height:1.6">Image was blocked by browser shields. <br/><span style="color:#06b6d4;cursor:pointer" onclick="window.open('${imageBlobUrl || generatedImgUrl}','_blank')">Click here to open directly</span></div>`;
                       }
                     }}
                   />
