@@ -64,7 +64,8 @@ function SignIn() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full h-[60px] outline-none border-2 border-white bg-transparent text-white placeholder-gray-300 px-[45px] rounded-full text-[18px]"
+          className="w-full h-[60px] outline-none border-2 border-white bg-transparent text-white placeholder-gray-300 rounded-full text-[18px]"
+          style={{ paddingLeft: '40px', paddingRight: '40px' }}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -75,7 +76,8 @@ function SignIn() {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full h-full bg-transparent text-white px-[45px] rounded-full outline-none placeholder-gray-300"
+            className="w-full h-full bg-transparent text-white rounded-full outline-none placeholder-gray-300"
+            style={{ paddingLeft: '40px', paddingRight: '40px' }}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
